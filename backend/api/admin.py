@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Event, Donation
+from .models import Event, Donation, AdminEmail
+
+@admin.register(AdminEmail)
+class AdminEmailAdmin(admin.ModelAdmin):
+    list_display = ('email', 'is_active')
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):

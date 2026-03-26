@@ -1,15 +1,49 @@
 import os
 import requests
-from django.db.models import Sum, Max, Count
+import random
+import csv
+from datetime import timedelta
+from django.db.models import Sum, Max, Count, Q
 from django.shortcuts import get_object_or_404
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, HttpResponse
+from django.core.mail import send_mail
+from django.utils import timezone
+from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.models import Token
 
-from .models import Event, Donation
-from .serializers import EventSummarySerializer, RecentDonationSerializer, DonationCreateSerializer
+from .models import Event, Donation, AdminEmail, LoginCode
+from .serializers import EventSummarySerializer, RecentDonationSerializer, DonationCreateSerializer, AdminDonationSerializer
+
+class ActiveEventSummaryView(APIView):
+    def get(self, request):
+        event = Event.objects.filter(is_active=True).first()
+        if not event:
+            return Response({"error": "No active event found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        successful_donations = event.donations.filter(payment_status='SUCCESS')
+        aggregates = successful_donations.aggregate(
+            raised_amount=Sum('amount'),
+            donation_count=Count('id'),
+            highest_donation=Max('amount')
+        )
+        
+        highest_donor_record = successful_donations.order_by('-amount').first()
+        highest_donor = "Anonymous"
+        if highest_donor_record:
+            highest_donor = "Anonymous" if highest_donor_record.is_anonymous else (highest_donor_record.donor_name or "Unknown")
+
+        event.raised_amount = aggregates['raised_amount'] or 0
+        event.donation_count = aggregates['donation_count'] or 0
+        event.highest_donation = aggregates['highest_donation'] or 0
+        event.highest_donor = highest_donor
+
+        serializer = EventSummarySerializer(event)
+        return Response(serializer.data)
 
 class EventSummaryView(APIView):
     def get(self, request, event_id):
@@ -45,7 +79,17 @@ class RecentDonationsView(APIView):
         serializer = RecentDonationSerializer(donations, many=True)
         return Response(serializer.data)
 
-class DonationCreateView(APIView):
+class DonationListCreateView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return []
+
+    def get(self, request):
+        donations = Donation.objects.all().order_by('-created_at')
+        serializer = AdminDonationSerializer(donations, many=True)
+        return Response(serializer.data)
+
     def post(self, request):
         serializer = DonationCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -59,8 +103,9 @@ class DonationCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ConfirmBankTransferView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, donation_id):
-        # NOTE: In production, protect this endpoint with appropriate permissions
         donation = get_object_or_404(Donation, id=donation_id, payment_mode='BANK_TRANSFER')
         if donation.payment_status == 'SUCCESS':
             return Response({'message': 'Donation already confirmed'}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,6 +151,218 @@ class VerifyFlutterwavePaymentView(APIView):
         donation.save()
         return Response({'status': 'failed verification'}, status=status.HTTP_400_BAD_REQUEST)
 
+class RequestLoginCodeView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if not email or not AdminEmail.objects.filter(email=email, is_active=True).exists():
+            # return Response({'message': 'If this email is registered, a code has been sent.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'If this email is registered, a code has been sent.'}, status=status.HTTP_400_BAD_REQUEST)
+        code = str(random.randint(100000, 999999))
+        LoginCode.objects.create(email=email, code=code)
+        
+        try:
+            send_mail(
+                'Your Admin Login Code',
+                f'Your code is {code}. It expires in 10 minutes.',
+                'noreply@theabilitylife.org',
+                [email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f'Could not send email for RequestLoginCodeView, here is the code for test {code} and error {e}')
+            return Response({'message': f'There was a problem sending the email. Error: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        return Response({'message': 'If this email is registered, a code has been sent.'}, status=status.HTTP_200_OK)
+
+class VerifyLoginCodeView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        
+        if not email or not code:
+            return Response({'error': 'Email and code are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        valid_time = timezone.now() - timedelta(minutes=10)
+        login_code = LoginCode.objects.filter(email=email, code=code, is_used=False, created_at__gte=valid_time).first()
+        
+        if login_code:
+            login_code.is_used = True
+            login_code.save()
+            
+            user, _ = User.objects.get_or_create(username=email, defaults={'email': email})
+            token, _ = Token.objects.get_or_create(user=user)
+            
+            admin_email = AdminEmail.objects.filter(email=email).first()
+            admin_name = admin_email.name if admin_email else 'TALI Staff'
+            
+            return Response({'token': token.key, 'name': admin_name}, status=status.HTTP_200_OK)
+            
+        return Response({'error': 'Invalid or expired code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+def get_filtered_transactions(request):
+    event_id = request.query_params.get('event_id')
+    if event_id:
+        event = get_object_or_404(Event, id=event_id)
+    else:
+        event = get_object_or_404(Event, is_active=True)
+
+    donations = event.donations.all().order_by('-created_at')
+    
+    search = request.query_params.get('search', '')
+    if search:
+        donations = donations.filter(
+            Q(donor_name__icontains=search) | 
+            Q(email__icontains=search) | 
+            Q(transaction_reference__icontains=search)
+        )
+        
+    method = request.query_params.get('method', 'All')
+    if method != 'All':
+        mapped = 'FLUTTERWAVE' if method == 'Flutterwave' else 'BANK_TRANSFER'
+        donations = donations.filter(payment_mode=mapped)
+        
+    status_param = request.query_params.get('status', 'All')
+    if status_param != 'All':
+        mapped = 'SUCCESS' if status_param == 'Confirmed' else 'PENDING'
+        donations = donations.filter(payment_status=mapped)
+        
+    date_filter = request.query_params.get('date', 'All')
+    now = timezone.now()
+    if date_filter == 'Today':
+        donations = donations.filter(created_at__date=now.date())
+        
+    return donations
+
+
+class AdminOverviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        event_id = request.query_params.get('event_id')
+        if event_id:
+            event = get_object_or_404(Event, id=event_id)
+        else:
+            event = get_object_or_404(Event, is_active=True)
+            
+        donations = event.donations.filter(payment_status='SUCCESS')
+        all_time_raised = donations.aggregate(Sum('amount'))['amount__sum'] or 0
+
+        date_range = request.query_params.get('range', 'all')
+        now = timezone.now()
+        if date_range == 'today':
+            donations = donations.filter(created_at__date=now.date())
+        elif date_range == 'week':
+            start_of_week = now - timedelta(days=now.weekday())
+            donations = donations.filter(created_at__gte=start_of_week.replace(hour=0, minute=0, second=0))
+
+        total_raised = donations.aggregate(Sum('amount'))['amount__sum'] or 0
+        campaign_goal = event.target_amount or 1
+        percent_funded = min((total_raised / campaign_goal) * 100, 100)
+        
+        donor_count = donations.count()
+        anonymous_count = donations.filter(is_anonymous=True).count()
+        
+        flutterwave_amount = donations.filter(payment_mode='FLUTTERWAVE').aggregate(Sum('amount'))['amount__sum'] or 0
+        bank_amount = donations.filter(payment_mode='BANK_TRANSFER').aggregate(Sum('amount'))['amount__sum'] or 0
+
+        # Calculate 'today' specifically for the +85,000 Today badge shown in mock
+        today_donations = event.donations.filter(payment_status='SUCCESS', created_at__date=now.date())
+        today_raised = today_donations.aggregate(Sum('amount'))['amount__sum'] or 0
+
+        return Response({
+            'total_raised': total_raised,
+            'all_time_raised': all_time_raised,
+            'today_raised': today_raised,
+            'campaign_goal': campaign_goal,
+            'percent_funded': percent_funded,
+            'donor_count': donor_count,
+            'anonymous_count': anonymous_count,
+            'methods': {
+                'FLUTTERWAVE': flutterwave_amount,
+                'BANK_TRANSFER': bank_amount
+            }
+        })
+
+
+from rest_framework.pagination import LimitOffsetPagination
+
+class AdminTransactionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        donations = get_filtered_transactions(request)
+        
+        paginator = LimitOffsetPagination()
+        paginator.default_limit = 12
+        paginated_donations = paginator.paginate_queryset(donations, request)
+        
+        serializer = AdminDonationSerializer(paginated_donations, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class VerifyFlutterwaveByRefView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, donation_id):
+        donation = get_object_or_404(Donation, id=donation_id, payment_mode='FLUTTERWAVE')
+        if donation.payment_status == 'SUCCESS':
+            return Response({'message': 'Already verified'}, status=status.HTTP_200_OK)
+            
+        secret_key = os.environ.get('FLUTTERWAVE_SECRET_KEY', 'dummy-key')
+        if secret_key == 'dummy-key':
+            donation.payment_status = 'SUCCESS'
+            donation.is_verified = True
+            donation.save()
+            return Response({'status': 'Mock verified (development)'}, status=status.HTTP_200_OK)
+            
+        url = f"https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={donation.transaction_reference}"
+        resp = requests.get(url, headers={"Authorization": f"Bearer {secret_key}"})
+        if resp.status_code == 200:
+            data = resp.json().get('data', {})
+            if data.get('status') == 'successful' and data.get('amount') >= donation.amount:
+                donation.payment_status = 'SUCCESS'
+                donation.is_verified = True
+                donation.save()
+                return Response({'status': 'verified'}, status=status.HTTP_200_OK)
+                
+        return Response({'status': 'Not successful on Flutterwave'}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminTransactionsExportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        donations = get_filtered_transactions(request)
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="transactions.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Donor Name', 'Email', 'Phone', 'Anonymous', 'Amount (NGN)', 'Method', 'Status', 'Transaction Ref'])
+        
+        for don in donations:
+            writer.writerow([
+                don.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                don.donor_name if not don.is_anonymous else 'Hidden',
+                don.email if not don.is_anonymous else 'Hidden',
+                don.phone,
+                'Yes' if don.is_anonymous else 'No',
+                don.amount,
+                don.payment_mode,
+                don.payment_status,
+                don.transaction_reference
+            ])
+            
+        return response
+
+class AdminEventListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        events = Event.objects.all().order_by('-id')
+        data = [{'id': e.id, 'title': e.title, 'is_active': e.is_active} for e in events]
+        return Response(data, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 def flutterwave_webhook(request):
     secret_hash = os.environ.get('FLUTTERWAVE_WEBHOOK_HASH', '')
@@ -132,6 +389,14 @@ def flutterwave_webhook(request):
 
 import time
 import json
+
+def active_sse_event_stream(request):
+    event = Event.objects.filter(is_active=True).first()
+    if event:
+        return sse_event_stream(request, event.id)
+    def err_stream():
+        yield "data: {\"error\": \"No active event\"}\n\n"
+    return StreamingHttpResponse(err_stream(), content_type='text/event-stream')
 
 def sse_event_stream(request, event_id):
     def event_stream():

@@ -1,188 +1,199 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import './../globals.css';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import './live.css';
 
-interface EventSummary {
-  raised_amount: string;
-  target_amount: string;
+interface BaseStats {
+  raised_amount: number;
+  target_amount: number;
   donation_count: number;
-  highest_donation: string;
   highest_donor: string;
+  highest_donation: number;
+  title: string;
 }
 
-interface Donation {
+interface LiveDonation {
   id: number;
   donor_display: string;
-  amount: string;
-  created_at: string;
+  amount: number | string;
+  created_at?: string;
 }
 
-interface Announcement {
-  id: number;
-  donor: string;
-  amount: string;
+function timeAgo(dateStr?: string): string {
+  if (!dateStr) return 'just now';
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
 }
 
-export default function LiveScreenPage() {
-  const [summary, setSummary] = useState<EventSummary | null>(null);
-  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  
-  // Calculate Progress robustly
-  const raised = summary ? Number(summary.raised_amount) : 0;
-  const target = (summary && Number(summary.target_amount) > 0) ? Number(summary.target_amount) : 1;
-  const percentage = Math.min((raised / target) * 100, 100);
-  const amountLeft = Math.max(target - raised, 0);
+export default function LiveDisplay() {
+  const [stats, setStats] = useState<BaseStats | null>(null);
+  const [percent, setPercent] = useState(0);
+  const [recentDonors, setRecentDonors] = useState<LiveDonation[]>([]);
 
-  const fetchInitialData = async () => {
-    try {
-      // Pointing to event ID 1
-      const sumRes = await fetch('http://127.0.0.1:8000/api/events/1/summary/');
-      const sumData = await sumRes.json();
-      setSummary(sumData);
-
-      const recentRes = await fetch('http://127.0.0.1:8000/api/events/1/recent-donations/');
-      const recentData = await recentRes.json();
-      setRecentDonations(recentData);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
+  // Initial Fetch
   useEffect(() => {
-    fetchInitialData();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setStats({
+            raised_amount: Number(data.raised_amount) || 0,
+            target_amount: Number(data.target_amount) || 1,
+            donation_count: Number(data.donation_count) || 0,
+            highest_donor: data.highest_donor || 'None',
+            highest_donation: Number(data.highest_donation) || 0,
+            title: data.title || 'Live Fundraiser Gala'
+          });
+          const p = Math.min((Number(data.raised_amount) / Number(data.target_amount)) * 100, 100);
+          setPercent(p);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
 
-    const eventSource = new EventSource('http://127.0.0.1:8000/api/events/1/stream/');
-    
+  // SSE Subscription
+  useEffect(() => {
+    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/stream/`);
+
     eventSource.onmessage = (event) => {
       if (event.data === ': heartbeat') return;
       try {
         const data = JSON.parse(event.data);
-        
-        // Push summary numbers directly
-        setSummary(prev => ({
-          ...prev!,
-          raised_amount: data.raised_amount,
-          donation_count: data.donation_count,
-          highest_donation: data.highest_donation,
-          highest_donor: data.highest_donor
-        }));
+        if (data.error) return;
+
+        setStats(prev => {
+          if (!prev) return prev;
+          const p = Math.min((Number(data.raised_amount) / prev.target_amount) * 100, 100);
+          setPercent(p);
+          return {
+            ...prev,
+            raised_amount: Number(data.raised_amount) || prev.raised_amount,
+            donation_count: Number(data.donation_count) || prev.donation_count,
+            highest_donation: Number(data.highest_donation) || prev.highest_donation,
+            highest_donor: data.highest_donor || prev.highest_donor,
+          };
+        });
 
         if (data.new_donations && data.new_donations.length > 0) {
-          // Prepend new donations cleanly
-          setRecentDonations(prev => {
-            const newList = [...data.new_donations, ...prev];
-            // Remove duplicates potentially grabbed during the transition gap
-            const uniqueList = Array.from(new Map(newList.map(item => [item.id, item])).values());
-            return uniqueList.slice(0, 50); // display max 50 recent donors visually
-          });
-
-          // Mount announcement cards. 
-          // They stack in flex-col so they never overlap
-          data.new_donations.forEach((don: any) => {
-             const ann = {
-               id: Date.now() + Math.random(),
-               donor: don.donor_display,
-               amount: don.amount
-             };
-             setAnnouncements(prev => [...prev, ann]);
-             
-             // Dismiss card automatically 
-             setTimeout(() => {
-               setAnnouncements(prev => prev.filter(a => a.id !== ann.id));
-             }, 8000); 
+          setRecentDonors(prev => {
+            const currentIds = new Set(prev.map(d => d.id));
+            const newOnes = data.new_donations.filter((d: any) => !currentIds.has(d.id));
+            return [...newOnes, ...prev].slice(0, 20);
           });
         }
-      } catch (e) {}
+      } catch (err) { /* ignore */ }
     };
 
     return () => eventSource.close();
   }, []);
 
+  if (!stats) {
+    return <div className="loading-screen"><div className="loader"></div></div>;
+  }
+
   return (
-    <div className="live-container">
-      {/* Announcements Container - floats right, items stack downwards */}
-      <div className="announcements-wrapper">
-        {announcements.map(ann => (
-          <div key={ann.id} className="announcement-card slide-in-top">
-            <div className="ann-icon">🎉</div>
-            <div className="ann-content">
-              <div className="ann-donor">New Donation from <strong>{ann.donor}</strong>!</div>
-              <div className="ann-amount">₦{Number(ann.amount).toLocaleString()}</div>
-            </div>
-          </div>
-        ))}
+    <div className="live-page">
+      {/* ========== TOP: Logo ========== */}
+      <div className="top-logo-bar">
+        <Image src="/logo-full.avif" alt="TALI Logo" width={280} height={80} style={{ objectFit: 'contain' }} priority />
       </div>
 
-      <div className="live-header">
-        <div className="qr-section">
-          <h2>Scan to Donate</h2>
-          <div className="qr-placeholder" style={{ width: 200, height: 200, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16, margin: '0 auto' }}>
-            <span style={{color: '#1d1d1f', fontWeight: 'bold', fontSize: '24px'}}>QR CODE</span>
-          </div>
-          <p className="scan-instruction">m.theabilitylife.org/donate</p>
+      {/* ========== BANNER with photos + title ========== */}
+      <div className="banner-section">
+        <div className="banner-photos">
+          <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&h=300&fit=crop" alt="" className="banner-img" />
         </div>
+        <div className="banner-overlay"></div>
+        <h1 className="banner-title">{stats.title}</h1>
+      </div>
+
+      {/* ========== PROGRESS BAR ========== */}
+      <div className="progress-section">
+        <div className="progress-track">
+          <div className="progress-fill" style={{ width: `${percent}%` }}>
+            <div className="progress-raised-pill">
+              <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+        <div className="progress-meta">
+          <div className="meta-left">Total Donors <i className="fa-solid fa-users"></i> {stats.donation_count}</div>
+          <div className="meta-right">Target: ₦{stats.target_amount.toLocaleString()} <i className="fa-solid fa-bullseye"></i></div>
+        </div>
+      </div>
+
+      {/* ========== BOTTOM 3-COLUMN SECTION ========== */}
+      <div className="bottom-section">
         
-        <div className="progress-section">
-          <h1 className="main-title">Bridging the Gap</h1>
-          
-          <div className="stats-row top-stats">
-            <div className="stat-box">
-              <span className="stat-label">Target Goal</span>
-              <span className="stat-value">₦{summary ? Number(summary.target_amount).toLocaleString() : '...'}</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Amount Left</span>
-              <span className="stat-value">₦{amountLeft.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="progress-bar-container">
-            <div className="progress-bar-fill" style={{ width: `${percentage}%` }}></div>
-            <div className="progress-text">{percentage.toFixed(1)}% Funded</div>
-          </div>
-
-          <div className="raised-huge">
-            ₦{raised.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      <div className="live-grid">
-        <div className="highlights-panel">
-          <h3>Event Highlights</h3>
-          <div className="stat-box-large">
-            <span className="stat-label">Total Sponsors</span>
-            <span className="stat-value highlight">{summary?.donation_count || 0}</span>
-          </div>
-          <div className="stat-box-large">
-            <span className="stat-label">Highest Single Donation</span>
-            <span className="stat-value highlight">₦{summary ? Number(summary.highest_donation).toLocaleString() : '0'}</span>
-          </div>
-          <div className="stat-box-large">
-            <span className="stat-label">Top Donor</span>
-            <span className="stat-value highlight">{summary?.highest_donor || '-'}</span>
+        {/* LEFT: Highest Donor Card */}
+        <div className="highest-donor-col">
+          <div className="highest-donor-card">
+            <div className="hd-trophy"><i className="fa-solid fa-trophy"></i></div>
+            <div className="hd-label">Highest<br />Single Donor</div>
+            <div className="hd-name">{stats.highest_donor}</div>
+            <div className="hd-amount">₦{stats.highest_donation.toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="recent-panel">
-          <h3>Recent Donations</h3>
-          <div className="recent-list">
-            {recentDonations.length === 0 ? (
-               <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '24px', fontWeight: 500 }}>Waiting for first donation...</div>
-            ) : (
-               recentDonations.map(don => (
-                 <div key={don.id} className="recent-item">
-                   <span className="recent-donor">{don.donor_display}</span>
-                   <span className="recent-amount">₦{Number(don.amount).toLocaleString()}</span>
-                 </div>
-               ))
+        {/* CENTER: Donate Instructions */}
+        <div className="donate-instructions-col">
+          <h2 className="donate-heading">TO DONATE</h2>
+          <div className="donate-steps">
+            <div className="step">
+              <div className="step-icon"><i className="fa-solid fa-qrcode"></i></div>
+              <p>Scan the<br />QR Code</p>
+            </div>
+            <div className="step">
+              <div className="step-icon"><i className="fa-solid fa-mobile-screen-button"></i></div>
+              <p>Fill the form<br />and your desired<br />amount</p>
+            </div>
+            <div className="step">
+              <div className="step-icon"><i className="fa-solid fa-circle-check"></i></div>
+              <p>Proceed to<br />payment</p>
+            </div>
+          </div>
+          <div className="donate-footer">
+            <p>For more information, visit</p>
+            <strong>www.theabilitylife.org</strong>
+          </div>
+        </div>
+
+        {/* RIGHT: Recent Donors Scrollable Feed */}
+        <div className="recent-donors-col">
+          <div className="donors-scroll-container">
+            {recentDonors.length > 0 ? recentDonors.map(don => (
+              <div key={don.id} className="donor-row">
+                <div className="donor-row-left">
+                  <div className="donor-row-name">{don.donor_display}</div>
+                  <div className="donor-row-amount">₦{Number(don.amount).toLocaleString()}</div>
+                </div>
+                <div className="donor-row-time">{timeAgo(don.created_at)}</div>
+              </div>
+            )) : (
+              <>
+                <div className="donor-row placeholder-row">
+                  <div className="donor-row-left">
+                    <div className="donor-row-name">Waiting for first donation...</div>
+                    <div className="donor-row-amount"></div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Crowd silhouette at very bottom */}
+      <div className="crowd-bg"></div>
     </div>
   );
 }

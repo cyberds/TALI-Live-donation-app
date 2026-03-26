@@ -52,3 +52,17 @@ class Donation(models.Model):
             # Generate a ref for bank transfers to ensure uniqueness if not provided
             self.transaction_reference = f"TALI-BT-{uuid.uuid4().hex[:12].upper()}"
         super().save(*args, **kwargs)
+
+class AdminEmail(models.Model):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=150, default='TALI Staff')
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.email
+
+class LoginCode(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)

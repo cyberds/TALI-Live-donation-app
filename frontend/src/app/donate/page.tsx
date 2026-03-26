@@ -42,7 +42,7 @@ export default function DonatePage() {
 
     try {
       // 1. Create a pending donation intent in the backend
-      const res = await fetch('http://127.0.0.1:8000/api/donations/', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,7 +83,7 @@ export default function DonatePage() {
         callback: async function (payment: any) {
           // 3. Verify Payment with backend before assuming success
           try {
-            const verifyRes = await fetch(`http://127.0.0.1:8000/api/donations/${data.id}/verify/`, {
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${data.id}/verify/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ transaction_id: payment.transaction_id })
