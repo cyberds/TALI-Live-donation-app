@@ -2,6 +2,15 @@ import os
 import requests
 import random
 import csv
+import hmac
+import hashlib
+import threading
+import subprocess
+import sys
+from django.conf import settings
+import requests
+import random
+import csv
 from datetime import timedelta
 from django.db.models import Sum, Max, Count, Q
 from django.shortcuts import get_object_or_404
@@ -479,3 +488,61 @@ def sse_event_stream(request, event_id):
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
+
+def execute_alwaysdata_deploy():
+    try:
+        print("Starting alwaysdata deployment...")
+        # 1. git pull
+        subprocess.run(["git", "pull", "origin", "main"], cwd=settings.BASE_DIR, check=True)
+        print("Git pull successful")
+        
+        # 2. pip install
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], cwd=settings.BASE_DIR, check=True)
+        print("Pip install successful")
+        
+        # 3. manage.py migrate
+        subprocess.run([sys.executable, "manage.py", "migrate"], cwd=settings.BASE_DIR, check=True)
+        print("Migrate successful")
+        
+        # 4. manage.py collectstatic
+        subprocess.run([sys.executable, "manage.py", "collectstatic", "--noinput"], cwd=settings.BASE_DIR, check=True)
+        print("Collectstatic successful")
+        
+        # 5. Restart site via alwaysdata API
+        api_key = os.environ.get('ALWAYSDATA_API_KEY')
+        site_id = os.environ.get('ALWAYSDATA_SITE_ID')
+        if api_key and site_id:
+            response = requests.post(f"https://api.alwaysdata.com/v1/site/{site_id}/restart/", auth=(api_key, ''))
+            print(f"Alwaysdata restart API response: {response.status_code}")
+        else:
+            print("Skipped server restart: ALWAYSDATA_API_KEY or ALWAYSDATA_SITE_ID env var is missing.")
+            
+    except Exception as e:
+        print(f"Deployment process failed: {e}")
+
+class GithubWebhookDeployView(APIView):
+    """
+    Webhook endpoint to trigger auto-deploy from GitHub.
+    Accepts POST requests, validates the signature, and runs the deploy in a background thread.
+    """
+    def post(self, request):
+        secret = os.environ.get('GITHUB_WEBHOOK_SECRET')
+        if not secret:
+            return Response({'error': 'Webhook secret not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        signature_header = request.headers.get('X-Hub-Signature-256')
+        if not signature_header:
+            return Response({'error': 'Missing signature'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        # Validate signature
+        hash_object = hmac.new(secret.encode('utf-8'), msg=request.body, digestmod=hashlib.sha256)
+        expected_signature = "sha256=" + hash_object.hexdigest()
+        
+        if not hmac.compare_digest(expected_signature, signature_header):
+            return Response({'error': 'Invalid signature'}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Trigger background deployment
+        threading.Thread(target=execute_alwaysdata_deploy).start()
+        
+        return Response({'status': 'Deployment started'}, status=status.HTTP_200_OK)
+
