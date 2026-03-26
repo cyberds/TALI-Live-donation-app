@@ -402,65 +402,78 @@ def sse_event_stream(request, event_id):
     def event_stream():
         last_donation_id = 0
         last_count = -1
+        start_time = time.time()
+        max_duration = 300  # 5 minute max connection, client will reconnect
         
         while True:
-            event = Event.objects.filter(id=event_id, is_active=True).first()
-            if not event:
-                yield f"event: error\ndata: {json.dumps({'message': 'Event not found'})}\n\n"
+            # Enforce max connection duration
+            if time.time() - start_time > max_duration:
+                yield f"event: reconnect\ndata: {json.dumps({'message': 'Connection timeout, please reconnect'})}\n\n"
                 break
-                
-            successful_donations = event.donations.filter(payment_status='SUCCESS')
-            current_count = successful_donations.count()
-            
-            if current_count != last_count:
-                aggregates = successful_donations.aggregate(
-                    raised_amount=Sum('amount'),
-                    highest_donation=Max('amount')
-                )
-                
-                new_donations = successful_donations.filter(id__gt=last_donation_id).order_by('id')
-                new_donation_data = []
-                for don in new_donations:
-                    new_donation_data.append({
-                        'id': don.id,
-                        'donor_display': "Anonymous" if don.is_anonymous else (don.donor_name or "Unknown"),
-                        'amount': str(don.amount),
-                        'created_at': don.created_at.isoformat()
-                    })
-                    last_donation_id = don.id
-                
-                highest_donor_record = successful_donations.order_by('-amount').first()
-                highest_donor = "Anonymous"
-                if highest_donor_record:
-                    highest_donor = "Anonymous" if highest_donor_record.is_anonymous else (highest_donor_record.donor_name or "Unknown")
-                
-                raised_amount = aggregates['raised_amount'] or 0
-                
-                milestone_msg = None
-                if event.target_amount and event.target_amount > 0:
-                    percent = (raised_amount / event.target_amount) * 100
-                    if percent >= 100:
-                        milestone_msg = "Goal Achieved! Thank you to all donors!"
-                    elif percent >= 75:
-                        milestone_msg = "We're 75% there! Let's keep going!"
-                    elif percent >= 50:
-                        milestone_msg = "Halfway to our goal!"
 
-                data = {
-                    'raised_amount': str(raised_amount),
-                    'donation_count': current_count,
-                    'highest_donation': str(aggregates['highest_donation'] or 0),
-                    'highest_donor': highest_donor,
-                    'new_donations': new_donation_data,
-                    'milestone': milestone_msg
-                }
+            try:
+                event = Event.objects.filter(id=event_id, is_active=True).first()
+                if not event:
+                    yield f"event: error\ndata: {json.dumps({'message': 'Event not found'})}\n\n"
+                    break
+                    
+                successful_donations = event.donations.filter(payment_status='SUCCESS')
+                current_count = successful_donations.count()
                 
-                yield f"data: {json.dumps(data)}\n\n"
-                last_count = current_count
-            else:
-                yield ": heartbeat\n\n"
+                if current_count != last_count:
+                    aggregates = successful_donations.aggregate(
+                        raised_amount=Sum('amount'),
+                        highest_donation=Max('amount')
+                    )
+                    
+                    new_donations = successful_donations.filter(id__gt=last_donation_id).order_by('id')
+                    new_donation_data = []
+                    for don in new_donations:
+                        new_donation_data.append({
+                            'id': don.id,
+                            'donor_display': "Anonymous" if don.is_anonymous else (don.donor_name or "Unknown"),
+                            'amount': str(don.amount),
+                            'created_at': don.created_at.isoformat()
+                        })
+                        last_donation_id = don.id
+                    
+                    highest_donor_record = successful_donations.order_by('-amount').first()
+                    highest_donor = "Anonymous"
+                    if highest_donor_record:
+                        highest_donor = "Anonymous" if highest_donor_record.is_anonymous else (highest_donor_record.donor_name or "Unknown")
+                    
+                    raised_amount = aggregates['raised_amount'] or 0
+                    
+                    milestone_msg = None
+                    if event.target_amount and event.target_amount > 0:
+                        percent = (raised_amount / event.target_amount) * 100
+                        if percent >= 100:
+                            milestone_msg = "Goal Achieved! Thank you to all donors!"
+                        elif percent >= 75:
+                            milestone_msg = "We're 75% there! Let's keep going!"
+                        elif percent >= 50:
+                            milestone_msg = "Halfway to our goal!"
+
+                    data = {
+                        'raised_amount': str(raised_amount),
+                        'donation_count': current_count,
+                        'highest_donation': str(aggregates['highest_donation'] or 0),
+                        'highest_donor': highest_donor,
+                        'new_donations': new_donation_data,
+                        'milestone': milestone_msg
+                    }
+                    
+                    yield f"data: {json.dumps(data)}\n\n"
+                    last_count = current_count
+                else:
+                    yield ": heartbeat\n\n"
+            except Exception as e:
+                # Transient DB error — don't kill the stream
+                yield f": error-recovery\n\n"
+                time.sleep(5)
+                continue
                 
-            time.sleep(2)
+            time.sleep(3)
 
     response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'

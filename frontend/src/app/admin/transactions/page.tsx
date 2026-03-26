@@ -98,7 +98,7 @@ export default function TransactionsPage() {
   useEffect(() => {
      const timer = setInterval(() => {
         setSecondsAgo(Math.floor((new Date().getTime() - lastUpdated.getTime()) / 1000));
-     }, 1000);
+     }, 5000);
      return () => clearInterval(timer);
   }, [lastUpdated]);
 
@@ -149,7 +149,7 @@ export default function TransactionsPage() {
         headers: { 'Authorization': `Token ${token}` }
       });
       if (res.ok) fetchTransactions();
-      else alert("Transaction not successful on Flutterwave yet.");
+      // Silent fail — the status badge will stay as "Pending" which is the correct UX
     } catch (err) {}
   };
 
@@ -163,7 +163,17 @@ export default function TransactionsPage() {
   };
 
   const handleCopy = (text: string) => {
-      navigator.clipboard.writeText(text);
+      try {
+        navigator.clipboard.writeText(text);
+      } catch {
+        // Fallback for non-HTTPS contexts
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
   };
 
   const currentPage = Math.floor(offset / limit) + 1;

@@ -41,12 +41,27 @@ export default function DonatePage() {
     setPaymentState(null);
 
     try {
+      // 0. Fetch the active event ID dynamically
+      let activeEventId: number | null = null;
+      try {
+        const evtRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`);
+        if (evtRes.ok) {
+          const evtData = await evtRes.json();
+          activeEventId = evtData.id || null;
+        }
+      } catch {}
+      if (!activeEventId) {
+        setPaymentState('FAILED');
+        setLoading(false);
+        return;
+      }
+
       // 1. Create a pending donation intent in the backend
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event: 1, // Assumes event ID 1 exists as the active event
+          event: activeEventId,
           donor_name: isAnonymous ? '' : name,
           email: email,
           phone: phone,
@@ -62,7 +77,15 @@ export default function DonatePage() {
       
       const data = await res.json();
       
-      // 2. Open FlutterwaveCheckout modal
+      // 2. Guard: Check if Flutterwave SDK loaded
+      // @ts-ignore
+      if (typeof FlutterwaveCheckout === 'undefined') {
+        setPaymentState('FAILED');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Open FlutterwaveCheckout modal
       // @ts-ignore
       FlutterwaveCheckout({
         public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY || "FLWPUBK_TEST-dummy-key",
@@ -81,7 +104,6 @@ export default function DonatePage() {
           logo: "https://www.theabilitylife.org/favicon.ico",
         },
         callback: async function (payment: any) {
-          // 3. Verify Payment with backend before assuming success
           try {
             const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${data.id}/verify/`, {
               method: 'POST',
@@ -99,7 +121,6 @@ export default function DonatePage() {
           }
         },
         onclose: function() {
-          // Runs when modal is closed manually
           setLoading(false);
           setPaymentState(prev => prev === 'SUCCESS' ? 'SUCCESS' : 'ABANDONED');
         }

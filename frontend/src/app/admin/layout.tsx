@@ -41,9 +41,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/events/`, {
            headers: { 'Authorization': `Token ${token}` }
         })
-        .then(res => res.json())
+        .then(res => {
+            if (res.status === 401) {
+                // Token expired — force re-login
+                localStorage.removeItem('tali_admin_token');
+                localStorage.removeItem('tali_admin_name');
+                setToken(null);
+                return null;
+            }
+            return res.json();
+        })
         .then(data => {
-            if (Array.isArray(data)) {
+            if (data && Array.isArray(data)) {
                 setEvents(data);
                 const active = data.find((e: any) => e.is_active) || data[0];
                 if (active) setSelectedEventId(active.id);

@@ -41,6 +41,10 @@ export default function OverviewPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/overview/?range=${range}&event_id=${selectedEventId}`, {
         headers: { 'Authorization': `Token ${token}` }
       });
+      if (!res.ok) {
+        console.error('Overview fetch failed:', res.status);
+        return;
+      }
       const data = await res.json();
       setMetrics(data);
     } catch (err) {
@@ -55,28 +59,52 @@ export default function OverviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, selectedEventId]);
 
-  // Handle SSE for Live Feed
+  // Handle SSE for Live Feed with reconnect
   useEffect(() => {
     if (!selectedEventId) return;
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${selectedEventId}/stream/`);
-    
-    eventSource.onmessage = (event) => {
-      if (event.data === ': heartbeat') return;
-      try {
-        const data = JSON.parse(event.data);
-        if (data.new_donations && data.new_donations.length > 0) {
-          setLiveDonations(prev => {
-             const newList = [...data.new_donations, ...prev];
-             const uniqueList = Array.from(new Map(newList.map(item => [item.id, item])).values());
-             return uniqueList.slice(0, 10);
-          });
-          fetchMetrics(); 
-        }
-      } catch (e) {}
-    };
+    let es: EventSource | null = null;
+    let retryDelay = 1000;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let isCancelled = false;
 
-    return () => eventSource.close();
-  }, []);
+    function connect() {
+      if (isCancelled) return;
+      es = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/${selectedEventId}/stream/`);
+      
+      es.onmessage = (event) => {
+        retryDelay = 1000;
+        if (event.data === ': heartbeat') return;
+        try {
+          const data = JSON.parse(event.data);
+          if (data.new_donations && data.new_donations.length > 0) {
+            setLiveDonations(prev => {
+               const newList = [...data.new_donations, ...prev];
+               const uniqueList = Array.from(new Map(newList.map(item => [item.id, item])).values());
+               return uniqueList.slice(0, 10);
+            });
+            fetchMetrics(); 
+          }
+        } catch (e) {}
+      };
+
+      es.onerror = () => {
+        es?.close();
+        if (!isCancelled) {
+          retryTimer = setTimeout(() => {
+            retryDelay = Math.min(retryDelay * 2, 30000);
+            connect();
+          }, retryDelay);
+        }
+      };
+    }
+
+    connect();
+    return () => {
+      isCancelled = true;
+      es?.close();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [selectedEventId]);
 
   const getRelativeTime = (isoString: string) => {
       const diff = Math.floor((new Date().getTime() - new Date(isoString).getTime()) / 1000);

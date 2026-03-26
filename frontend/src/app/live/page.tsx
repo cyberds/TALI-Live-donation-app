@@ -22,11 +22,17 @@ interface LiveDonation {
 
 function timeAgo(dateStr?: string): string {
   if (!dateStr) return 'just now';
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
-  return `${Math.floor(diff / 86400)} days ago`;
+  try {
+    const time = new Date(dateStr).getTime();
+    if (isNaN(time)) return 'just now';
+    const diff = Math.floor((Date.now() - time) / 1000);
+    if (diff < 0 || diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
+  } catch {
+    return 'just now';
+  }
 }
 
 export default function LiveDisplay() {
@@ -55,40 +61,65 @@ export default function LiveDisplay() {
       .catch(err => console.error(err));
   }, []);
 
-  // SSE Subscription
+  // SSE Subscription with auto-reconnect
   useEffect(() => {
-    const eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/stream/`);
+    let eventSource: EventSource | null = null;
+    let retryDelay = 1000;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let isCancelled = false;
 
-    eventSource.onmessage = (event) => {
-      if (event.data === ': heartbeat') return;
-      try {
-        const data = JSON.parse(event.data);
-        if (data.error) return;
+    function connect() {
+      if (isCancelled) return;
+      eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/stream/`);
 
-        setStats(prev => {
-          if (!prev) return prev;
-          const p = Math.min((Number(data.raised_amount) / prev.target_amount) * 100, 100);
-          setPercent(p);
-          return {
-            ...prev,
-            raised_amount: Number(data.raised_amount) || prev.raised_amount,
-            donation_count: Number(data.donation_count) || prev.donation_count,
-            highest_donation: Number(data.highest_donation) || prev.highest_donation,
-            highest_donor: data.highest_donor || prev.highest_donor,
-          };
-        });
+      eventSource.onmessage = (event) => {
+        retryDelay = 1000; // Reset backoff on successful message
+        if (event.data === ': heartbeat') return;
+        try {
+          const data = JSON.parse(event.data);
+          if (data.error) return;
 
-        if (data.new_donations && data.new_donations.length > 0) {
-          setRecentDonors(prev => {
-            const currentIds = new Set(prev.map(d => d.id));
-            const newOnes = data.new_donations.filter((d: any) => !currentIds.has(d.id));
-            return [...newOnes, ...prev].slice(0, 20);
+          setStats(prev => {
+            if (!prev) return prev;
+            const p = Math.min((Number(data.raised_amount) / prev.target_amount) * 100, 100);
+            setPercent(p);
+            return {
+              ...prev,
+              raised_amount: Number(data.raised_amount) || prev.raised_amount,
+              donation_count: Number(data.donation_count) || prev.donation_count,
+              highest_donation: Number(data.highest_donation) || prev.highest_donation,
+              highest_donor: data.highest_donor || prev.highest_donor,
+            };
           });
-        }
-      } catch (err) { /* ignore */ }
-    };
 
-    return () => eventSource.close();
+          if (data.new_donations && data.new_donations.length > 0) {
+            setRecentDonors(prev => {
+              const currentIds = new Set(prev.map(d => d.id));
+              const newOnes = data.new_donations.filter((d: any) => !currentIds.has(d.id));
+              return [...newOnes, ...prev].slice(0, 20);
+            });
+          }
+        } catch (err) { /* ignore parse errors */ }
+      };
+
+      eventSource.onerror = () => {
+        eventSource?.close();
+        if (!isCancelled) {
+          retryTimer = setTimeout(() => {
+            retryDelay = Math.min(retryDelay * 2, 30000); // Exponential backoff, max 30s
+            connect();
+          }, retryDelay);
+        }
+      };
+    }
+
+    connect();
+
+    return () => {
+      isCancelled = true;
+      eventSource?.close();
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
   if (!stats) {
@@ -99,7 +130,7 @@ export default function LiveDisplay() {
     <div className="live-page">
       {/* ========== TOP: Logo ========== */}
       <div className="top-logo-bar">
-        <Image src="/logo-full.avif" alt="TALI Logo" width={280} height={80} style={{ objectFit: 'contain' }} priority />
+        <Image src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png" alt="TALI Logo" width={280} height={80} style={{ objectFit: 'contain' }} priority />
       </div>
 
       {/* ========== BANNER with photos + title ========== */}
@@ -133,7 +164,7 @@ export default function LiveDisplay() {
 
       {/* ========== BOTTOM 3-COLUMN SECTION ========== */}
       <div className="bottom-section">
-        
+
         {/* LEFT: Highest Donor Card */}
         <div className="highest-donor-col">
           <div className="highest-donor-card">
