@@ -136,12 +136,12 @@ export default function LiveDisplay() {
       {/* ========== BANNER with photos + title ========== */}
       <div className="banner-section">
         <div className="banner-photos">
-          <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=300&fit=crop" alt="" className="banner-img" />
-          <img src="https://images.unsplash.com/photo-1529390079861-591de354faf5?w=400&h=300&fit=crop" alt="" className="banner-img" />
-          <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=400&h=300&fit=crop" alt="" className="banner-img" />
-          <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop" alt="" className="banner-img" />
-          <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300&fit=crop" alt="" className="banner-img" />
-          <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&h=300&fit=crop" alt="" className="banner-img" />
+          <img src="/downsyndrome.png" alt="" className="banner-img" />
+          <img src="cripplegraduate.png" alt="" className="banner-img" />
+          <img src="https://static.wixstatic.com/media/782bc6_4baa798f4915408ca21383bef2a7e4b4~mv2.jpeg/v1/fill/w_660,h_1000,al_c,q_85,enc_avif,quality_auto/782bc6_4baa798f4915408ca21383bef2a7e4b4~mv2.jpeg" alt="" className="banner-img" />
+          <img src="https://static.wixstatic.com/media/782bc6_16703d544cb54a4f8fd8af37f1a93adc~mv2.png/v1/fill/w_702,h_690,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/782bc6_16703d544cb54a4f8fd8af37f1a93adc~mv2.png" alt="" className="banner-img" />
+          <img src="https://static.wixstatic.com/media/782bc6_e0233827090d4b9f8e04789f027c2dd5~mv2.jpg/v1/fill/w_335,h_690,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/782bc6_e0233827090d4b9f8e04789f027c2dd5~mv2.jpg" alt="" className="banner-img" />
+          <img src="https://static.wixstatic.com/media/782bc6_4e014ed444b74103b1b2d8558aaee95b~mv2.jpg/v1/crop/x_1497,y_0,w_3022,h_4016/fill/w_602,h_790,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Tali%20Event%2050.jpg" alt="" className="banner-img" />
         </div>
         <div className="banner-overlay"></div>
         <h1 className="banner-title">{stats.title}</h1>
@@ -149,16 +149,17 @@ export default function LiveDisplay() {
 
       {/* ========== PROGRESS BAR ========== */}
       <div className="progress-section">
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${percent}%` }}>
-            <div className="progress-raised-pill">
-              <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
-            </div>
+        <div className="progress-bar-wrapper">
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+          </div>
+          <div className="progress-raised-pill" data-text={`₦${stats.raised_amount.toLocaleString()}`} style={{ left: `${percent}%` }}>
+            <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
           </div>
         </div>
         <div className="progress-meta">
           <div className="meta-left">Total Donors <i className="fa-solid fa-users"></i> {stats.donation_count}</div>
-          <div className="meta-right">Target: ₦{stats.target_amount.toLocaleString()} <i className="fa-solid fa-bullseye"></i></div>
+          <div className="meta-right">Target: <span className="breathing-glow">₦{stats.target_amount.toLocaleString()}</span> <i className="fa-solid fa-bullseye"></i></div>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ class EventSummarySerializer(serializers.ModelSerializer):
         model = Event
         fields = [
             'id', 'name', 'title', 'target_amount', 'purpose_link', 'is_active', 
+            'bank_name', 'account_name', 'account_number',
             'raised_amount', 'donation_count', 'highest_donation', 'highest_donor'
         ]
 

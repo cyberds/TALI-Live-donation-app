@@ -48,9 +48,13 @@ class Donation(models.Model):
         return f"{name} - {self.amount} ({self.get_payment_status_display()})"
     
     def save(self, *args, **kwargs):
-        if not self.transaction_reference and self.payment_mode == 'BANK_TRANSFER':
-            # Generate a ref for bank transfers to ensure uniqueness if not provided
-            self.transaction_reference = f"TALI-BT-{uuid.uuid4().hex[:12].upper()}"
+        if not self.transaction_reference:
+            if self.payment_mode == 'BANK_TRANSFER':
+                self.transaction_reference = f"TALI-BT-{uuid.uuid4().hex[:12].upper()}"
+            elif self.payment_mode == 'FLUTTERWAVE':
+                self.transaction_reference = f"TALI-FLW-{uuid.uuid4().hex[:12].upper()}"
+            else:
+                self.transaction_reference = f"TALI-{uuid.uuid4().hex[:12].upper()}"
         super().save(*args, **kwargs)
 
 class AdminEmail(models.Model):

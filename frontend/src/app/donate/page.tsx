@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Script from 'next/script';
 import './../globals.css';
+
+interface ActiveEvent {
+  id: number;
+  bank_name: string | null;
+  account_name: string | null;
+  account_number: string | null;
+}
 
 export default function DonatePage() {
   const [amount, setAmount] = useState<number | ''>('');
@@ -16,14 +23,37 @@ export default function DonatePage() {
   const [loading, setLoading] = useState(false);
   const [paymentState, setPaymentState] = useState<'SUCCESS' | 'FAILED' | 'ABANDONED' | null>(null);
 
-  const bankInfo = {
-    bank: "Zenith Bank",
-    number: "1234567890",
-    name: "The Ability Life Initiative"
-  };
+  // Dynamically loaded event data (bank info + ID)
+  const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.id) {
+          setActiveEvent({
+            id: data.id,
+            bank_name: data.bank_name || null,
+            account_name: data.account_name || null,
+            account_number: data.account_number || null,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(bankInfo.number);
+    if (!activeEvent?.account_number) return;
+    try {
+      navigator.clipboard.writeText(activeEvent.account_number);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = activeEvent.account_number;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -41,16 +71,7 @@ export default function DonatePage() {
     setPaymentState(null);
 
     try {
-      // 0. Fetch the active event ID dynamically
-      let activeEventId: number | null = null;
-      try {
-        const evtRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`);
-        if (evtRes.ok) {
-          const evtData = await evtRes.json();
-          activeEventId = evtData.id || null;
-        }
-      } catch {}
-      if (!activeEventId) {
+      if (!activeEvent) {
         setPaymentState('FAILED');
         setLoading(false);
         return;
@@ -61,7 +82,7 @@ export default function DonatePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event: activeEventId,
+          event: activeEvent.id,
           donor_name: isAnonymous ? '' : name,
           email: email,
           phone: phone,
@@ -248,21 +269,25 @@ export default function DonatePage() {
           </div>
         </form>
 
-        <div className="divider">OR</div>
+        {activeEvent?.account_number && (
+          <>
+            <div className="divider">OR</div>
 
-        <div className="card" style={{ padding: '24px 16px' }}>
-          <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Bank Transfer</h2>
-          <div className="bank-details">
-            <div className="bank-name">{bankInfo.bank}</div>
-            <div className="account-number">{bankInfo.number}</div>
-            <div className="account-name">{bankInfo.name}</div>
-            
-            <button className="btn-secondary" onClick={handleCopy}>
-              {copied ? 'Copied!' : 'Copy Account Number'}
-            </button>
-            <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description.</p>
-          </div>
-        </div>
+            <div className="card" style={{ padding: '24px 16px' }}>
+              <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Bank Transfer</h2>
+              <div className="bank-details">
+                <div className="bank-name">{activeEvent.bank_name}</div>
+                <div className="account-number">{activeEvent.account_number}</div>
+                <div className="account-name">{activeEvent.account_name}</div>
+                
+                <button className="btn-secondary" onClick={handleCopy}>
+                  {copied ? 'Copied!' : 'Copy Account Number'}
+                </button>
+                <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description.</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
