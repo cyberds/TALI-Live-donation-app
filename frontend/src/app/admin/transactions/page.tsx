@@ -40,6 +40,15 @@ export default function TransactionsPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [secondsAgo, setSecondsAgo] = useState(0);
 
+  // Manual Transaction Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualPhone, setManualPhone] = useState('');
+  const [manualAmount, setManualAmount] = useState('');
+  const [manualIsAnonymous, setManualIsAnonymous] = useState(false);
+
   // Debounce search
   useEffect(() => {
      const timer = setTimeout(() => setDebouncedSearch(search), 500);
@@ -153,6 +162,49 @@ export default function TransactionsPage() {
     } catch (err) {}
   };
 
+  const handleSubmitManual = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const token = localStorage.getItem('tali_admin_token');
+      if (!token || !selectedEventId) return;
+
+      setIsSubmitting(true);
+      try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/donations/manual/`, {
+              method: 'POST',
+              headers: { 
+                  'Authorization': `Token ${token}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  event: selectedEventId,
+                  donor_name: manualName,
+                  email: manualEmail,
+                  phone: manualPhone,
+                  amount: manualAmount,
+                  is_anonymous: manualIsAnonymous
+              })
+          });
+
+          if (res.ok) {
+              setIsModalOpen(false);
+              setManualName('');
+              setManualEmail('');
+              setManualPhone('');
+              setManualAmount('');
+              setManualIsAnonymous(false);
+              fetchTransactions();
+          } else {
+              const data = await res.json();
+              alert(`Error: ${JSON.stringify(data)}`);
+          }
+      } catch (err) {
+          console.error(err);
+          alert('Failed to connect to server.');
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
+
   const toggleUnmask = (id: number) => {
      setUnmaskedDonors(prev => {
         const next = new Set(prev);
@@ -183,10 +235,16 @@ export default function TransactionsPage() {
     <div className="transactions-container">
        <div className="transactions-header">
            <h2>Transactions</h2>
-           <button className="btn-secondary" onClick={handleExportCSV}>
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-               Export CSV
-           </button>
+           <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Manual Entry
+                </button>
+                <button className="btn-secondary" onClick={handleExportCSV} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export CSV
+                </button>
+           </div>
        </div>
 
        <div className="filters-bar">
@@ -304,6 +362,84 @@ export default function TransactionsPage() {
               <button disabled={currentPage === totalPages} onClick={() => setOffset(offset + limit)}>Next &rarr;</button>
            </div>
        </div>
+
+       {/* Manual Entry Modal */}
+       {isModalOpen && (
+           <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+               <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-header">
+                        <h3>Manual Donation Entry</h3>
+                        <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+                    </div>
+                    <form className="modal-form" onSubmit={handleSubmitManual}>
+                        <div className="form-group">
+                            <label className="form-label" style={{fontSize: 12}}>Donor Name</label>
+                            <input 
+                                className="form-input" 
+                                type="text" 
+                                placeholder="Full Name" 
+                                value={manualName} 
+                                onChange={e => setManualName(e.target.value)} 
+                                required 
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label" style={{fontSize: 12}}>Email Address</label>
+                            <input 
+                                className="form-input" 
+                                type="email" 
+                                placeholder="email@example.com" 
+                                value={manualEmail} 
+                                onChange={e => setManualEmail(e.target.value)} 
+                                required 
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label" style={{fontSize: 12}}>Phone Number (Optional)</label>
+                            <input 
+                                className="form-input" 
+                                type="tel" 
+                                placeholder="+234..." 
+                                value={manualPhone} 
+                                onChange={e => setManualPhone(e.target.value)} 
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label" style={{fontSize: 12}}>Amount (NGN)</label>
+                            <input 
+                                className="form-input" 
+                                type="number" 
+                                placeholder="5000000" 
+                                value={manualAmount} 
+                                onChange={e => setManualAmount(e.target.value)} 
+                                required 
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={manualIsAnonymous} 
+                                    onChange={e => setManualIsAnonymous(e.target.checked)} 
+                                />
+                                <span style={{fontSize: 14, fontWeight: 500}}>Mark as Anonymous</span>
+                            </label>
+                        </div>
+                        
+                        <div style={{ marginTop: 10 }}>
+                            <button 
+                                className="btn-primary" 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                style={{ width: '100%', height: 48, borderRadius: 12, opacity: isSubmitting ? 0.6 : 1 }}
+                            >
+                                {isSubmitting ? 'Recording...' : 'Record Donation'}
+                            </button>
+                        </div>
+                    </form>
+               </div>
+           </div>
+       )}
     </div>
   );
 }

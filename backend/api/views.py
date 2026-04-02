@@ -308,6 +308,29 @@ class AdminTransactionsView(APIView):
         serializer = AdminDonationSerializer(paginated_donations, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+class ManualDonationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        event_id = request.data.get('event')
+        if event_id:
+            event = get_object_or_404(Event, id=event_id)
+        else:
+            event = Event.objects.filter(is_active=True).first()
+            if not event:
+                 return Response({"error": "No active event found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DonationCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            donation = serializer.save(
+                event=event,
+                payment_mode='BANK_TRANSFER',
+                payment_status='SUCCESS',
+                is_verified=True
+            )
+            return Response(AdminDonationSerializer(donation).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class VerifyFlutterwaveByRefView(APIView):
     permission_classes = [IsAuthenticated]

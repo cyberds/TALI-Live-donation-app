@@ -83,7 +83,7 @@ export default function DonatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           event: activeEvent.id,
-          donor_name: isAnonymous ? '' : name,
+          donor_name: name,
           email: email,
           phone: phone,
           is_anonymous: isAnonymous,
@@ -199,19 +199,19 @@ export default function DonatePage() {
             <div className="amount-grid">
               <button 
                 type="button"
-                className={`amount-btn ${amount === 1000 && !isCustom ? 'active' : ''}`}
-                onClick={() => handleAmountSelect(1000)}
-              >₦1,000</button>
+                className={`amount-btn ${amount === 1000000 && !isCustom ? 'active' : ''}`}
+                onClick={() => handleAmountSelect(1000000)}
+              >₦1,000,000</button>
               <button 
                 type="button"
-                className={`amount-btn ${amount === 5000 && !isCustom ? 'active' : ''}`}
-                onClick={() => handleAmountSelect(5000)}
-              >₦5,000</button>
+                className={`amount-btn ${amount === 5000000 && !isCustom ? 'active' : ''}`}
+                onClick={() => handleAmountSelect(5000000)}
+              >₦5,000,000</button>
               <button 
                 type="button"
-                className={`amount-btn ${amount === 10000 && !isCustom ? 'active' : ''}`}
-                onClick={() => handleAmountSelect(10000)}
-              >₦10,000</button>
+                className={`amount-btn ${amount === 10000000 && !isCustom ? 'active' : ''}`}
+                onClick={() => handleAmountSelect(10000000)}
+              >₦10,000,000</button>
             </div>
             
             <input 
@@ -240,12 +240,10 @@ export default function DonatePage() {
             </label>
           </div>
 
-          {!isAnonymous && (
-            <div className="form-group">
-              <label htmlFor="donor-name" className="form-label">Full Name</label>
-              <input id="donor-name" type="text" className="form-input" placeholder="John Doe" required={!isAnonymous} value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="donor-name" className="form-label">Full Name</label>
+            <input id="donor-name" type="text" className="form-input" placeholder="John Doe" required={!isAnonymous} value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
 
           <div className="form-group">
             <label htmlFor="donor-email" className="form-label">Email Address</label>

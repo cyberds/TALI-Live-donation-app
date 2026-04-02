@@ -804,3 +804,12 @@
     border-bottom: none;
   }
 }
+
+/* Modal Styles */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+.modal-content { background: white; width: 100%; max-width: 500px; border-radius: 20px; padding: 32px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); animation: modalScale 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes modalScale { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.modal-header h3 { margin: 0; font-size: 20px; font-weight: 700; }
+.modal-close { background: #f2f2f7; border: none; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); }
+.modal-form { display: flex; flex-direction: column; gap: 20px; }
