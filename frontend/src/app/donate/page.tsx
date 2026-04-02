@@ -173,15 +173,17 @@ export default function DonatePage() {
   return (
     <>
       <Script src="https://checkout.flutterwave.com/v3.js" strategy="lazyOnload" />
-      <div className="container">
-        <header className="header">
-          <h1 className="title">Make a Difference</h1>
-          <p className="subtitle">Your contribution helps us bridge the gap for persons living with disabilities in Nigeria.</p>
-          <a href="https://www.theabilitylife.org/what-we-do" target="_blank" rel="noopener noreferrer" className="purpose-link">
-            See what we fund &rarr;
-          </a>
-        </header>
+      
+      <section className="hero-section">
+        <div className="hero-overlay"></div>
+        <img src="/gala-hero.jpg" alt="TALI Gala" className="hero-image" />
+        <div className="hero-content">
+          <h1 className="hero-title">Giving is Living</h1>
+          <p className="hero-subtitle">Empowering lives, one donation at a time.</p>
+        </div>
+      </section>
 
+      <div className="container" style={{ position: 'relative', zIndex: 10 }}>
         {paymentState === 'ABANDONED' && (
           <div style={{ padding: '12px', background: '#fff3cd', color: '#856404', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', textAlign: 'center' }}>
             Payment cancelled. You can try again whenever you are ready.
@@ -193,7 +195,12 @@ export default function DonatePage() {
           </div>
         )}
 
-        <form className="card" onSubmit={handleFlutterwavePayment}>
+        <form className="card glass-card" onSubmit={handleFlutterwavePayment}>
+          <header className="header" style={{ marginBottom: 32 }}>
+            <h1 className="title" style={{ fontSize: 24 }}>Make a Donation</h1>
+            <p className="subtitle">Your contribution helps us bridge the gap for persons living with disabilities in Nigeria.</p>
+          </header>
+
           <div className="form-group">
             <label htmlFor="custom-amount" className="form-label">Select Amount (NGN)</label>
             <div className="amount-grid">
@@ -201,24 +208,24 @@ export default function DonatePage() {
                 type="button"
                 className={`amount-btn ${amount === 1000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(1000000)}
-              >₦1,000,000</button>
+              >₦1.0M</button>
               <button 
                 type="button"
                 className={`amount-btn ${amount === 5000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(5000000)}
-              >₦5,000,000</button>
+              >₦5.0M</button>
               <button 
                 type="button"
                 className={`amount-btn ${amount === 10000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(10000000)}
-              >₦10,000,000</button>
+              >₦10M</button>
             </div>
             
             <input 
               id="custom-amount"
               type="number" 
               className="form-input" 
-              placeholder="Custom Amount" 
+              placeholder="Enter Other Amount" 
               value={isCustom ? amount : ''}
               onChange={(e) => {
                 setIsCustom(true);
@@ -242,7 +249,7 @@ export default function DonatePage() {
 
           <div className="form-group">
             <label htmlFor="donor-name" className="form-label">Full Name</label>
-            <input id="donor-name" type="text" className="form-input" placeholder="John Doe" required={!isAnonymous} value={name} onChange={(e) => setName(e.target.value)} />
+            <input id="donor-name" type="text" className="form-input" placeholder="e.g. John Doe" required={!isAnonymous} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <div className="form-group">
@@ -260,33 +267,69 @@ export default function DonatePage() {
               type="submit" 
               className="btn-primary" 
               disabled={!amount || loading}
-              style={{ opacity: (!amount || loading) ? 0.5 : 1, cursor: (!amount || loading) ? 'not-allowed' : 'pointer' }}
+              style={{ padding: '18px', borderRadius: 14, opacity: (!amount || loading) ? 0.5 : 1, cursor: (!amount || loading) ? 'not-allowed' : 'pointer' }}
             >
               {loading ? 'Processing...' : `Donate ${amount ? `₦${amount.toLocaleString()}` : ''} securely`}
             </button>
           </div>
+
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
+            <a href="https://www.theabilitylife.org/copy-of-projects" target="_blank" rel="noopener noreferrer" className="purpose-link">
+              See what we fund &rarr;
+            </a>
+          </div>
         </form>
+
+        <section className="impact-section">
+          <h3 className="impact-title">Our Impact</h3>
+          <div className="impact-grid">
+            <div className="impact-card">
+              <div className="impact-img-wrap">
+                <img src="/cripplegraduate.png" alt="Empowerment" />
+              </div>
+              <div className="impact-info">
+                <h4>Empowerment</h4>
+                <p>Helping persons with disabilities achieve their full potential through education.</p>
+              </div>
+            </div>
+            <div className="impact-card">
+              <div className="impact-img-wrap">
+                <img src="/downsyndrome.png" alt="Inclusion" />
+              </div>
+              <div className="impact-info">
+                <h4>Inclusion</h4>
+                <p>Creating a world where every ability is celebrated and supported.</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {activeEvent?.account_number && (
           <>
-            <div className="divider">OR</div>
+            <div className="divider">OR BANK TRANSFER</div>
 
-            <div className="card" style={{ padding: '24px 16px' }}>
-              <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Bank Transfer</h2>
-              <div className="bank-details">
+            <div className="card" style={{ padding: '32px 24px', borderRadius: 24, border: '1px dashed #d2d2d7' }}>
+              <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Direct Bank Deposit</h2>
+              <div className="bank-details" style={{ background: 'transparent', border: 'none' }}>
                 <div className="bank-name">{activeEvent.bank_name}</div>
-                <div className="account-number">{activeEvent.account_number}</div>
-                <div className="account-name">{activeEvent.account_name}</div>
+                <div className="account-number" style={{ fontSize: 28, margin: '12px 0' }}>{activeEvent.account_number}</div>
+                <div className="account-name" style={{ fontWeight: 600 }}>{activeEvent.account_name}</div>
                 
-                <button className="btn-secondary" onClick={handleCopy}>
-                  {copied ? 'Copied!' : 'Copy Account Number'}
-                </button>
-                <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description.</p>
+                <div style={{ marginTop: 24 }}>
+                  <button className="btn-secondary" onClick={handleCopy} style={{ borderRadius: 12, padding: '12px 24px' }}>
+                    {copied ? 'Copied Details!' : 'Copy Bank Details'}
+                  </button>
+                </div>
+                <p style={{ marginTop: '20px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description for tracking.</p>
               </div>
             </div>
           </>
         )}
       </div>
+      
+      <footer style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', fontSize: 13 }}>
+        &copy; {new Date().getFullYear()} The Ability Life Initiative. All rights reserved.
+      </footer>
     </>
   );
 }

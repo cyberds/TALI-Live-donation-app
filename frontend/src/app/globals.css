@@ -223,3 +223,144 @@ h1, h2, h3, h4, h5, h6, p {
 .btn-secondary:hover {
   background: rgba(31, 48, 92, 0.05);
 }
+
+/* Premium Enhancements */
+.hero-section {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 450px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: -150px; /* Overlap with the form */
+  background: var(--tali-blue);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(31, 48, 92, 0.4) 0%, rgba(31, 48, 92, 0.2) 60%, var(--bg-color) 100%);
+  z-index: 1;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  filter: brightness(0.85) contrast(1.1);
+  transform: scale(1.05);
+  animation: slowZoom 20s infinite alternate;
+}
+
+@keyframes slowZoom {
+  from { transform: scale(1.05); }
+  to { transform: scale(1.15); }
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 180px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 2;
+  padding: 0 20px;
+}
+
+.hero-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 8px;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  letter-spacing: -1px;
+}
+
+.hero-subtitle {
+  color: white;
+  font-size: 18px;
+  opacity: 0.95;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 5;
+}
+
+.impact-section {
+  margin-top: 40px;
+  margin-bottom: 60px;
+}
+
+.impact-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--tali-blue);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.impact-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease;
+}
+
+.impact-card:hover {
+  transform: translateY(-8px);
+}
+
+.impact-img-wrap {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.impact-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.impact-info {
+  padding: 16px;
+}
+
+.impact-info h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--tali-blue);
+}
+
+.impact-info p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    height: 350px;
+  }
+  .hero-title {
+    font-size: 32px;
+  }
+  .impact-grid {
+    grid-template-columns: 1fr;
+  }
+}
