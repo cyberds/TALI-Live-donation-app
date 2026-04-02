@@ -19,7 +19,7 @@ export default function DonatePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [paymentState, setPaymentState] = useState<'SUCCESS' | 'FAILED' | 'ABANDONED' | null>(null);
 
@@ -39,7 +39,7 @@ export default function DonatePage() {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleCopy = () => {
@@ -95,9 +95,9 @@ export default function DonatePage() {
       if (!res.ok) {
         throw new Error("Could not initialize donation instance.");
       }
-      
+
       const data = await res.json();
-      
+
       // 2. Guard: Check if Flutterwave SDK loaded
       // @ts-ignore
       if (typeof FlutterwaveCheckout === 'undefined') {
@@ -141,7 +141,7 @@ export default function DonatePage() {
             setPaymentState('FAILED');
           }
         },
-        onclose: function() {
+        onclose: function () {
           setLoading(false);
           setPaymentState(prev => prev === 'SUCCESS' ? 'SUCCESS' : 'ABANDONED');
         }
@@ -173,11 +173,20 @@ export default function DonatePage() {
   return (
     <>
       <Script src="https://checkout.flutterwave.com/v3.js" strategy="lazyOnload" />
-      
+
+      <nav className="nav-logo">
+        <a href="https://www.theabilitylife.org" target="_blank" rel="noopener noreferrer">
+          <img src="/tali-logo.avif" alt="TALI Logo" className="tali-logo-img" />
+        </a>
+      </nav>
+
       <section className="hero-section">
         <div className="hero-overlay"></div>
-        <img src="/gala-hero.jpg" alt="TALI Gala" className="hero-image" />
+        <img src="https://static.wixstatic.com/media/782bc6_037b319d1505496cbd4c70f3e023afb2~mv2.jpg/v1/fit/w_1080,h_717,q_90,enc_avif,quality_auto/782bc6_037b319d1505496cbd4c70f3e023afb2~mv2.jpg" alt="TALI Gala" className="hero-image" />
         <div className="hero-content">
+          <div className="hero-logo-wrap">
+            <img src="/tali-logo.avif" alt="TALI Logo" className="hero-logo-img" style={{ filter: 'brightness(0) invert(1)' }} />
+          </div>
           <h1 className="hero-title">Giving is Living</h1>
           <p className="hero-subtitle">Empowering lives, one donation at a time.</p>
         </div>
@@ -204,28 +213,28 @@ export default function DonatePage() {
           <div className="form-group">
             <label htmlFor="custom-amount" className="form-label">Select Amount (NGN)</label>
             <div className="amount-grid">
-              <button 
+              <button
                 type="button"
                 className={`amount-btn ${amount === 1000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(1000000)}
               >₦1.0M</button>
-              <button 
+              <button
                 type="button"
                 className={`amount-btn ${amount === 5000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(5000000)}
               >₦5.0M</button>
-              <button 
+              <button
                 type="button"
                 className={`amount-btn ${amount === 10000000 && !isCustom ? 'active' : ''}`}
                 onClick={() => handleAmountSelect(10000000)}
               >₦10M</button>
             </div>
-            
-            <input 
+
+            <input
               id="custom-amount"
-              type="number" 
-              className="form-input" 
-              placeholder="Enter Other Amount" 
+              type="number"
+              className="form-input"
+              placeholder="Enter Other Amount"
               value={isCustom ? amount : ''}
               onChange={(e) => {
                 setIsCustom(true);
@@ -237,9 +246,9 @@ export default function DonatePage() {
 
           <div className="form-group" style={{ margin: '24px 0' }}>
             <label className="checkbox-group" htmlFor="anonymous-check">
-              <input 
+              <input
                 id="anonymous-check"
-                type="checkbox" 
+                type="checkbox"
                 checked={isAnonymous}
                 onChange={(e) => setIsAnonymous(e.target.checked)}
               />
@@ -263,9 +272,9 @@ export default function DonatePage() {
           </div>
 
           <div style={{ marginTop: '30px' }}>
-            <button 
-              type="submit" 
-              className="btn-primary" 
+            <button
+              type="submit"
+              className="btn-primary"
               disabled={!amount || loading}
               style={{ padding: '18px', borderRadius: 14, opacity: (!amount || loading) ? 0.5 : 1, cursor: (!amount || loading) ? 'not-allowed' : 'pointer' }}
             >
@@ -273,12 +282,34 @@ export default function DonatePage() {
             </button>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <a href="https://www.theabilitylife.org/copy-of-projects" target="_blank" rel="noopener noreferrer" className="purpose-link">
-              See what we fund &rarr;
-            </a>
-          </div>
+          
         </form>
+
+        {activeEvent?.account_number ? (
+          <>
+            <div className="divider">OR BANK TRANSFER</div>
+
+            <div className="card" style={{ padding: '32px 24px', borderRadius: 24, border: '1px dashed #d2d2d7' }}>
+              <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Direct Bank Deposit</h2>
+              <div className="bank-details" style={{ background: 'transparent', border: 'none' }}>
+                <div className="bank-name">{activeEvent.bank_name}</div>
+                <div className="account-number" style={{ fontSize: 28, margin: '12px 0' }}>{activeEvent.account_number}</div>
+                <div className="account-name" style={{ fontWeight: 600 }}>{activeEvent.account_name}</div>
+                
+                <div style={{ marginTop: 24 }}>
+                  <button className="btn-secondary" onClick={handleCopy} style={{ borderRadius: 12, padding: '12px 24px' }}>
+                    {copied ? 'Copied Details!' : 'Copy Bank Details'}
+                  </button>
+                </div>
+                <p style={{ marginTop: '20px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description for tracking.</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+            {loading ? 'Loading bank details...' : ''}
+          </div>
+        )}
 
         <section className="impact-section">
           <h3 className="impact-title">Our Impact</h3>
@@ -302,31 +333,14 @@ export default function DonatePage() {
               </div>
             </div>
           </div>
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
+            <a href="https://www.theabilitylife.org/copy-of-projects" target="_blank" rel="noopener noreferrer" className="purpose-link">
+              See what we fund &rarr;
+            </a>
+          </div>
         </section>
-
-        {activeEvent?.account_number && (
-          <>
-            <div className="divider">OR BANK TRANSFER</div>
-
-            <div className="card" style={{ padding: '32px 24px', borderRadius: 24, border: '1px dashed #d2d2d7' }}>
-              <h2 className="title" style={{ fontSize: '18px', textAlign: 'center', marginBottom: '16px' }}>Direct Bank Deposit</h2>
-              <div className="bank-details" style={{ background: 'transparent', border: 'none' }}>
-                <div className="bank-name">{activeEvent.bank_name}</div>
-                <div className="account-number" style={{ fontSize: 28, margin: '12px 0' }}>{activeEvent.account_number}</div>
-                <div className="account-name" style={{ fontWeight: 600 }}>{activeEvent.account_name}</div>
-                
-                <div style={{ marginTop: 24 }}>
-                  <button className="btn-secondary" onClick={handleCopy} style={{ borderRadius: 12, padding: '12px 24px' }}>
-                    {copied ? 'Copied Details!' : 'Copy Bank Details'}
-                  </button>
-                </div>
-                <p style={{ marginTop: '20px', fontSize: '12px', color: 'var(--text-secondary)' }}>Include "Donation" in your transfer description for tracking.</p>
-              </div>
-            </div>
-          </>
-        )}
       </div>
-      
+
       <footer style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', fontSize: 13 }}>
         &copy; {new Date().getFullYear()} The Ability Life Initiative. All rights reserved.
       </footer>

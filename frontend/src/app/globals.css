@@ -22,12 +22,18 @@ body {
   box-sizing: border-box;
 }
 
-h1, h2, h3, h4, h5, h6, p {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
   margin: 0;
 }
 
 .container {
-  max-width: 480px; 
+  max-width: 480px;
   margin: 0 auto;
   padding: 40px 20px;
 }
@@ -162,15 +168,18 @@ h1, h2, h3, h4, h5, h6, p {
   font-size: 13px;
   margin: 24px 0;
 }
+
 .divider::before,
 .divider::after {
   content: "";
   flex: 1;
   border-bottom: 1px solid #d2d2d7;
 }
+
 .divider:not(:empty)::before {
   margin-right: .5em;
 }
+
 .divider:not(:empty)::after {
   margin-left: .5em;
 }
@@ -231,7 +240,8 @@ h1, h2, h3, h4, h5, h6, p {
   height: 450px;
   position: relative;
   overflow: hidden;
-  margin-bottom: -150px; /* Overlap with the form */
+  margin-bottom: -150px;
+  /* Overlap with the form */
   background: var(--tali-blue);
 }
 
@@ -253,8 +263,13 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 @keyframes slowZoom {
-  from { transform: scale(1.05); }
-  to { transform: scale(1.15); }
+  from {
+    transform: scale(1.05);
+  }
+
+  to {
+    transform: scale(1.15);
+  }
 }
 
 .hero-content {
@@ -316,7 +331,7 @@ h1, h2, h3, h4, h5, h6, p {
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease;
 }
 
@@ -357,10 +372,43 @@ h1, h2, h3, h4, h5, h6, p {
   .hero-section {
     height: 350px;
   }
+
   .hero-title {
     font-size: 32px;
   }
+
   .impact-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Logo Styles */
+.nav-logo {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: none;
+  justify-content: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.hero-logo-wrap {
+  margin-bottom: 24px;
+}
+
+.tali-logo-img {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.hero-logo-img {
+  height: 80px;
+  width: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
