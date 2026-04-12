@@ -1,0 +1,114 @@
+/* ART FOR ABILITY — gallery / auction night (scoped to .art-for-ability) */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+.art-for-ability {
+  --afa-ink: #141218;
+  --afa-paper: #f5f1ea;
+  --afa-gold: #b8953c;
+  --afa-gold-light: #d4b76a;
+  --afa-wine: #5c2838;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body:has(.art-for-ability) {
+  background: linear-gradient(180deg, #f5f1ea 0%, #ebe4d8 100%);
+}
+
+.art-for-ability .hero-section {
+  background: var(--afa-ink);
+  margin-bottom: -150px;
+}
+
+.art-for-ability .hero-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 18, 24, 0.55) 0%,
+    rgba(31, 48, 92, 0.35) 45%,
+    var(--bg-color) 100%
+  );
+}
+
+.art-for-ability .hero-image {
+  opacity: 0.65;
+  filter: brightness(0.75) contrast(1.15) saturate(0.95);
+}
+
+.art-for-ability .hero-content {
+  bottom: 200px;
+}
+
+.art-for-ability .hero-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--afa-gold-light);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.art-for-ability .hero-title {
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: clamp(2.25rem, 8vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+}
+
+.art-for-ability .hero-title .hero-title-line {
+  display: block;
+}
+
+.art-for-ability .hero-title .hero-title-accent {
+  color: var(--afa-gold-light);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.art-for-ability .hero-subtitle {
+  font-size: 1.05rem;
+  max-width: 22rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+
+.art-for-ability .glass-card {
+  background: rgba(255, 252, 248, 0.94);
+  border: 1px solid rgba(184, 149, 60, 0.22);
+  box-shadow: 0 24px 64px rgba(20, 18, 24, 0.12);
+}
+
+.art-for-ability .title {
+  color: var(--tali-blue);
+}
+
+.art-for-ability .amount-btn.active {
+  background: linear-gradient(135deg, var(--tali-blue) 0%, #2a4070 100%);
+  border-color: var(--tali-blue);
+  box-shadow: 0 0 0 1px rgba(184, 149, 60, 0.35);
+}
+
+.art-for-ability .btn-primary {
+  background: linear-gradient(135deg, var(--tali-blue) 0%, #243a66 100%);
+  box-shadow: 0 6px 20px rgba(31, 48, 92, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.art-for-ability .impact-title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+}
+
+.art-for-ability .impact-card {
+  border: 1px solid rgba(184, 149, 60, 0.15);
+}
+
+.art-for-ability .purpose-link {
+  color: var(--afa-wine);
+}
+
+.art-for-ability footer {
+  color: #6b6560;
+}

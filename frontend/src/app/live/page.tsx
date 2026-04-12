@@ -52,7 +52,7 @@ export default function LiveDisplay() {
             donation_count: Number(data.donation_count) || 0,
             highest_donor: data.highest_donor || 'None',
             highest_donation: Number(data.highest_donation) || 0,
-            title: data.title || 'Live Fundraiser Gala'
+            title: data.title || 'ART FOR ABILITY'
           });
           const p = Math.min((Number(data.raised_amount) / Number(data.target_amount)) * 100, 100);
           setPercent(p);
@@ -129,39 +129,79 @@ export default function LiveDisplay() {
   return (
     <div className="live-page">
       {/* ========== TOP: Logo ========== */}
-      <div className="top-logo-bar">
+      {/* <div className="top-logo-bar">
         <Image src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png" alt="TALI Logo" width={280} height={80} style={{ objectFit: 'contain' }} priority />
-      </div>
+      </div> */}
 
-      {/* ========== BANNER with photos + title ========== */}
-      <div className="banner-section">
-        <div className="banner-photos">
-          <img src="/downsyndrome.png" alt="" className="banner-img" />
-          <img src="cripplegraduate.png" alt="" className="banner-img" />
-          <img src="https://static.wixstatic.com/media/782bc6_4baa798f4915408ca21383bef2a7e4b4~mv2.jpeg/v1/fill/w_660,h_1000,al_c,q_85,enc_avif,quality_auto/782bc6_4baa798f4915408ca21383bef2a7e4b4~mv2.jpeg" alt="" className="banner-img" />
-          <img src="https://static.wixstatic.com/media/782bc6_16703d544cb54a4f8fd8af37f1a93adc~mv2.png/v1/fill/w_702,h_690,al_c,q_90,usm_0.66_1.00_0.01,enc_avif,quality_auto/782bc6_16703d544cb54a4f8fd8af37f1a93adc~mv2.png" alt="" className="banner-img" />
-          <img src="https://static.wixstatic.com/media/782bc6_e0233827090d4b9f8e04789f027c2dd5~mv2.jpg/v1/fill/w_335,h_690,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/782bc6_e0233827090d4b9f8e04789f027c2dd5~mv2.jpg" alt="" className="banner-img" />
-          <img src="https://static.wixstatic.com/media/782bc6_4e014ed444b74103b1b2d8558aaee95b~mv2.jpg/v1/crop/x_1497,y_0,w_3022,h_4016/fill/w_602,h_790,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Tali%20Event%2050.jpg" alt="" className="banner-img" />
+      {/* ========== HERO: programme artwork + signature painting ========== */}
+      <header className="hero-section" aria-label="Event">
+        <div className="hero-art-layer" aria-hidden />
+        <div className="hero-inner">
+          <div className="hero-visual">
+            <div className="hero-image-frame">
+              <Image
+                src="/TALI%20MAIN%20PIC.png"
+                alt="TALI programme artwork — celebrating ability and inclusion"
+                width={720}
+                height={900}
+                className="hero-main-pic"
+                priority
+                sizes="(max-width: 900px) 100vw, 38vw"
+              />
+            </div>
+          </div>
+          <div className="hero-copy-panel">
+            <p className="banner-eyebrow">Live auction · Banquet Hall, State House, Abuja</p>
+            <h1 className="banner-title">{stats.title}</h1>
+            <p className="banner-tagline">Where Art Meets Impact · Funding Dreams, Building Futures</p>
+            <p className="banner-subtitle">Creative Inclusion &amp; Enterprise Auction</p>
+          </div>
+          <div className="hero-logo-container">
+            <Image src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png" alt="TALI Logo" width={580} height={226} style={{ objectFit: 'contain' }} priority />
+          </div>
         </div>
-        <div className="banner-overlay"></div>
-        <h1 className="banner-title">{stats.title}</h1>
-      </div>
+      </header>
 
-      {/* ========== PROGRESS BAR ========== */}
-      <div className="progress-section">
+      {/* ========== DONATIONS PROGRESS (prominent band) ========== */}
+      <section className="progress-section" aria-label="Fundraising progress">
+        <div className="progress-section-head">
+          <div className="progress-head-text">
+            <span className="progress-kicker">Live fundraising</span>
+            <h2 className="progress-heading">Donations progress</h2>
+          </div>
+          <div className="progress-head-stats">
+            <div className="progress-stat-chip">
+              <span className="progress-stat-label">Raised</span>
+              <span className="progress-stat-value">₦{stats.raised_amount.toLocaleString()}</span>
+            </div>
+            <div className="progress-stat-chip progress-stat-chip--target">
+              <span className="progress-stat-label">Target</span>
+              <span className="progress-stat-value">₦{stats.target_amount.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
         <div className="progress-bar-wrapper">
           <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+            <div className="progress-fill" style={{ width: `${percent}%` }} />
           </div>
-          <div className="progress-raised-pill" data-text={`₦${stats.raised_amount.toLocaleString()}`} style={{ left: `${percent}%` }}>
+          <div
+            className="progress-raised-pill"
+            data-text={`₦${stats.raised_amount.toLocaleString()}`}
+            style={{ left: `${percent}%` }}
+          >
             <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
           </div>
         </div>
         <div className="progress-meta">
-          <div className="meta-left">Total Donors <i className="fa-solid fa-users"></i> {stats.donation_count}</div>
-          <div className="meta-right">Target: <span className="breathing-glow">₦{stats.target_amount.toLocaleString()}</span> <i className="fa-solid fa-bullseye"></i></div>
+          <div className="meta-left">
+            Total donors <i className="fa-solid fa-users" aria-hidden /> {stats.donation_count}
+          </div>
+          <div className="meta-right">
+            <span className="meta-right-hint">Help us reach the goal</span>
+            <i className="fa-solid fa-bullseye" aria-hidden />
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ========== BOTTOM 3-COLUMN SECTION ========== */}
       <div className="bottom-section">

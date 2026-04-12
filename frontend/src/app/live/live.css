@@ -1,14 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* Programme theme — TALI art assets (gold wheelchair, sage / rose artwork, white texture panels) */
+:root {
+  --tali-ink: #1c1814;
+  --tali-paper: #f5f0e8;
+  --tali-cream: #faf7f2;
+  --tali-gold: #d4af37;
+  --tali-gold-bright: #e5b80b;
+  --tali-gold-deep: #9a7b28;
+  --tali-burgundy: #722f37;
+  --tali-burgundy-deep: #5c262d;
+  --tali-sage: #6b8f71;
+  --tali-forest: #2d6a3e;
+  --tali-ember: #c45c2a;
+  --tali-blue: #1f305c;
+  --afa-ink: var(--tali-ink);
+  --afa-paper: var(--tali-paper);
+  --afa-gold: var(--tali-gold);
+  --afa-gold-deep: var(--tali-gold-deep);
+  --afa-cream: var(--tali-cream);
+}
 
 /* ===== RESET & BASE ===== */
 html,
 body {
   margin: 0;
   padding: 0;
-  background: #f5f6fa;
-  color: #1a1a2e;
-  font-family: 'Inter', sans-serif;
-  /* overflow: scroll; */
+  background: var(--tali-paper);
+  color: var(--tali-ink);
+  font-family: 'DM Sans', system-ui, sans-serif;
   min-height: 100vh;
 }
 
@@ -26,64 +46,261 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem 0 0.5rem 0;
-  background: white;
+  padding: 1.25rem 1rem 1rem;
+  background: linear-gradient(180deg, #fffefb 0%, var(--tali-cream) 100%);
+  border-bottom: 1px solid rgba(114, 47, 55, 0.12);
   position: relative;
   z-index: 5;
 }
 
-/* ===== BANNER ===== */
-.banner-section {
+/* ===== HERO: TALI ART BG + white overlay + main painting ===== */
+.hero-section {
   position: relative;
   width: 100%;
-  height: 28vh;
-  overflow: hidden;
   flex-shrink: 0;
+  min-height: min(36vh, 420px);
+  max-height: 44vh;
+  overflow: hidden;
 }
 
-.banner-photos {
+.hero-art-layer {
+  position: absolute;
+  inset: 0;
+  background-color: #e8e4dc;
+  background-image: url('/TALI%20ART%20BG.png');
+  background-size: cover;
+  background-position: 40% center;
+}
+
+.hero-art-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 254, 251, 0.08) 0%,
+    rgba(255, 254, 251, 0.55) 28%,
+    rgba(255, 254, 251, 0.94) 52%,
+    rgba(255, 254, 251, 0.97) 100%
+  );
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
   display: flex;
-  width: 100%;
-  height: 100%;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  /* gap: clamp(1rem, 5vw, 3rem); */
+  gap: 1rem;
+  /* max-width: 1400px; */
+  max-width: 100%;
+  margin: 0 auto;
+  padding: clamp(1rem, 2vh, 2rem) clamp(1.25rem, 4vw, 3rem);
+  /* padding: 2rem 16rem; */
+  min-height: inherit;
+  max-height: 44vh;
+  box-sizing: border-box;
 }
 
-.banner-img {
-  flex: 1;
-  object-fit: cover;
-  min-width: 0;
-}
-
-.banner-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom,
-      rgba(26, 26, 46, 0.35) 0%,
-      rgba(26, 26, 46, 0.75) 100%);
-}
-
-.banner-title {
-  position: absolute;
-  inset: 0;
+.hero-visual {
+  flex: 0 1 42%;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  font-family: 'Playfair Display', serif;
-  font-size: 4.5rem;
-  font-weight: 900;
-  color: white;
-  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-  line-height: 1.15;
-  padding: 0 4rem;
-  margin: 0;
-  z-index: 2;
+  min-width: 0;
 }
 
-/* ===== PROGRESS SECTION ===== */
+.hero-logo-container {
+  /* flex: 0 1 10%; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.hero-image-frame {
+  position: relative;
+  width: 100%;
+  max-width: min(100%, 380px);
+  max-height: min(38vh, 400px);
+  border-radius: 6px;
+  box-shadow:
+    0 4px 0 rgba(212, 175, 55, 0.85),
+    0 20px 50px rgba(28, 24, 20, 0.35),
+    0 0 0 1px rgba(114, 47, 55, 0.15);
+  background: #fffefb;
+  padding: 6px;
+}
+
+.hero-main-pic {
+  width: 150%;
+  height: auto;
+  max-height: min(36vh, 388px);
+  object-fit: contain;
+  display: block;
+  border-radius: 2px;
+}
+
+.hero-copy-panel {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  padding: 0.5rem 0 0.5rem 0.25rem;
+  min-width: 0;
+}
+
+.banner-eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--tali-burgundy);
+  font-weight: 700;
+  margin: 0 0 0.65rem 0;
+}
+
+.banner-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.2rem, 4.2vw, 3.85rem);
+  font-weight: 700;
+  color: var(--tali-ink);
+  line-height: 1.06;
+  margin: 0 0 0.55rem 0;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+
+.banner-tagline {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.05rem, 1.85vw, 1.35rem);
+  font-style: italic;
+  font-weight: 600;
+  color: #3d3834;
+  margin: 0 0 0.4rem 0;
+  max-width: 36rem;
+  line-height: 1.4;
+}
+
+.banner-subtitle {
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tali-sage);
+  font-weight: 700;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .hero-section {
+    max-height: none;
+  }
+
+  .hero-inner {
+    flex-direction: column;
+    align-items: center;
+    max-height: none;
+    padding-bottom: 1.5rem;
+  }
+
+  .hero-copy-panel {
+    align-items: center;
+    text-align: center;
+    padding-top: 0;
+  }
+
+  .hero-image-frame {
+    max-width: 280px;
+    max-height: 320px;
+  }
+
+  .hero-main-pic {
+    max-height: 300px;
+  }
+}
+
+/* ===== DONATIONS PROGRESS (high-visibility gold band) ===== */
 .progress-section {
-  padding: 1.5rem 6rem;
-  background: white;
+  padding: 1.35rem clamp(1.25rem, 4vw, 3.5rem) 1.6rem;
+  background: linear-gradient(180deg, #f0c82a 0%, var(--tali-gold-bright) 38%, #d4a82a 100%);
+  border-top: 3px solid rgba(28, 24, 20, 0.12);
+  border-bottom: 4px solid rgba(114, 47, 55, 0.35);
   flex-shrink: 0;
+  box-shadow:
+    0 8px 28px rgba(28, 24, 20, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.progress-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.progress-head-text {
+  min-width: 0;
+}
+
+.progress-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(28, 24, 20, 0.55);
+  margin-bottom: 0.35rem;
+}
+
+.progress-heading {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.75rem, 3.2vw, 2.35rem);
+  font-weight: 700;
+  color: var(--tali-ink);
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.progress-head-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.progress-stat-chip {
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid rgba(28, 24, 20, 0.12);
+  border-radius: 14px;
+  padding: 0.55rem 1.15rem;
+  min-width: 9.5rem;
+  box-shadow: 0 4px 14px rgba(28, 24, 20, 0.1);
+}
+
+.progress-stat-chip--target {
+  border-color: rgba(114, 47, 55, 0.45);
+}
+
+.progress-stat-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(28, 24, 20, 0.5);
+  margin-bottom: 0.2rem;
+}
+
+.progress-stat-value {
+  font-size: clamp(1.15rem, 2.1vw, 1.5rem);
+  font-weight: 900;
+  color: var(--tali-ink);
+  letter-spacing: 0.02em;
 }
 
 .progress-bar-wrapper {
@@ -93,12 +310,15 @@ body {
 
 .progress-track {
   width: 100%;
-  height: 60px;
-  background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+  height: 92px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 100%);
   border-radius: 100px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    inset 0 3px 12px rgba(28, 24, 20, 0.18),
+    0 2px 0 rgba(255, 255, 255, 0.4);
+  border: 3px solid rgba(28, 24, 20, 0.22);
 }
 
 /* Light sweep across the ENTIRE bar */
@@ -134,7 +354,13 @@ body {
 .progress-fill {
   height: 100%;
   border-radius: 100px;
-  background: linear-gradient(90deg, #1a237e 0%, #42a5f5 100%);
+  background: linear-gradient(
+    90deg,
+    var(--tali-burgundy-deep) 0%,
+    var(--tali-burgundy) 28%,
+    var(--tali-forest) 62%,
+    var(--tali-sage) 100%
+  );
   position: relative;
   transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
@@ -175,18 +401,18 @@ body {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #0d47a1, #1565c1);
-  color: white;
-  padding: 14px 32px;
+  background: linear-gradient(145deg, #1a1510 0%, #2a2420 40%, #1a1510 100%);
+  color: #fffef8;
+  padding: 18px 36px;
   border-radius: 100px;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 2.8vw, 2.15rem);
   font-weight: 900;
   white-space: nowrap;
   box-shadow:
-    0 4px 20px rgba(13, 71, 161, 0.4),
-    0 2px 0 #0a3780,
-    0 4px 0 #082e6a,
-    0 6px 12px rgba(0, 0, 0, 0.25);
+    0 6px 28px rgba(28, 24, 20, 0.45),
+    0 0 0 3px rgba(255, 255, 255, 0.9),
+    0 2px 0 rgba(255, 255, 255, 0.2) inset;
+  border: 2px solid rgba(212, 175, 55, 0.9);
   z-index: 5;
   transition: left 2s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -199,74 +425,73 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 2.8vw, 2.15rem);
   font-weight: 900;
   font-style: italic;
   color: transparent;
-  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
+  -webkit-text-stroke: 1.5px rgba(212, 175, 55, 0.35);
   z-index: -1;
   transform: translate(2px, 2px);
 }
 
 .pill-amount {
-  font-style: italic;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3),
-    0 -1px 0 rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(66, 165, 245, 0.5);
-  letter-spacing: 1px;
+  font-style: normal;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  letter-spacing: 0.5px;
 }
 
 .progress-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.8rem;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #37474f;
+  margin-top: 1rem;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-weight: 800;
+  color: var(--tali-ink);
 }
 
 .progress-meta i {
   margin: 0 6px;
-  color: #1a237e;
+  color: var(--tali-burgundy-deep);
 }
 
 .meta-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 800;
-  color: #1a237e;
-  font-size: 1.5rem;
+  color: var(--tali-burgundy-deep);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
 }
 
-.breathing-glow {
+.meta-right-hint {
   animation: breathe 3s ease-in-out infinite;
-  display: inline-block;
 }
 
 @keyframes breathe {
 
   0%,
   100% {
-    text-shadow: 0 0 8px rgba(26, 35, 126, 0.15);
-    filter: brightness(1);
+    opacity: 0.88;
   }
 
   50% {
-    text-shadow:
-      0 0 16px rgba(26, 35, 126, 0.35),
-      0 0 40px rgba(66, 165, 245, 0.2);
-    filter: brightness(1.1);
+    opacity: 1;
   }
 }
 
-/* ===== BOTTOM 3-COLUMN ===== */
+/* ===== BOTTOM 3-COLUMN (white texture write-up zone) ===== */
 .bottom-section {
   flex-grow: 1;
   display: flex;
-  padding: 2rem 4rem;
+  padding: 2rem clamp(1.25rem, 3vw, 4rem);
   gap: 2rem;
   position: relative;
   z-index: 2;
+  background-color: #fdfcfa;
+  background-image: url('/TALI%20ART%20WHITE%20BG.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* -- Left: Highest Donor -- */
@@ -278,14 +503,14 @@ body {
 }
 
 .highest-donor-card {
-  background: linear-gradient(135deg, #0d1b3e 0%, #1a237e 100%);
+  background: linear-gradient(155deg, var(--tali-burgundy-deep) 0%, var(--tali-burgundy) 45%, #3d2428 100%);
   color: white;
   border-radius: 24px;
   padding: 2rem 2.5rem 2.5rem;
   position: relative;
   width: 100%;
-  border: 2px solid #c9a84c;
-  box-shadow: 0 8px 30px rgba(13, 27, 62, 0.3);
+  border: 2px solid var(--tali-gold);
+  box-shadow: 0 12px 36px rgba(28, 24, 20, 0.32);
 }
 
 .hd-trophy {
@@ -316,7 +541,7 @@ body {
 .hd-amount {
   font-size: 2rem;
   font-weight: 900;
-  color: #34c759;
+  color: #b8e986;
 }
 
 /* -- Center: Donate Instructions -- */
@@ -330,11 +555,12 @@ body {
 }
 
 .donate-heading {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: #1a237e;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--tali-burgundy-deep);
   margin: 0 0 2rem 0;
-  letter-spacing: 2px;
+  letter-spacing: 0.08em;
 }
 
 .donate-steps {
@@ -355,14 +581,15 @@ body {
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  background: #f0f2f9;
+  background: linear-gradient(145deg, #fffefb, #f0ebe3);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.8rem;
-  color: #1a237e;
+  color: var(--tali-burgundy);
   margin-bottom: 1rem;
-  border: 2px solid #e0e3ef;
+  border: 2px solid rgba(212, 175, 55, 0.65);
+  box-shadow: 0 4px 12px rgba(28, 24, 20, 0.08);
 }
 
 .step p {
@@ -385,8 +612,8 @@ body {
 
 .donate-footer strong {
   font-size: 1.5rem;
-  color: #1a237e;
-  font-weight: 900;
+  color: var(--tali-forest);
+  font-weight: 800;
 }
 
 /* -- Right: Recent Donors Feed -- */
@@ -424,9 +651,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-  border: 2px solid #e8e8e8;
-  border-left: 5px solid #f57c00;
+  background: #fffefb;
+  border: 1px solid rgba(196, 160, 53, 0.22);
+  border-left: 5px solid var(--afa-gold);
   border-radius: 12px;
   padding: 1rem 1.2rem;
   transition: border-color 0.3s ease, transform 0.3s ease;
@@ -434,11 +661,11 @@ body {
 }
 
 .donor-row:nth-child(odd) {
-  border-left-color: #2e7d32;
+  border-left-color: #2d5a3d;
 }
 
 .donor-row:nth-child(even) {
-  border-left-color: #f57c00;
+  border-left-color: #c45c2a;
 }
 
 @keyframes fadeSlideIn {
@@ -471,11 +698,11 @@ body {
 }
 
 .donor-row:nth-child(odd) .donor-row-amount {
-  color: #2e7d32;
+  color: #2d5a3d;
 }
 
 .donor-row:nth-child(even) .donor-row-amount {
-  color: #f57c00;
+  color: #b85c24;
 }
 
 .donor-row-time {
@@ -495,14 +722,12 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60%;
+  height: 55%;
   background-image: url('/TALI Live Bottom Background.png');
   background-repeat: no-repeat;
   background-size: cover;
   background-position: top center;
-  /* mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.08) 100%); */
-  /* -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.08) 100%); */
-  /* opacity: 0.15; */
+  opacity: 0.1;
   z-index: 0;
   pointer-events: none;
 }
@@ -514,12 +739,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f6fa;
+  background: var(--afa-paper);
 }
 
 .loader {
-  border: 4px solid #e0e3ef;
-  border-top: 4px solid #1a237e;
+  border: 4px solid rgba(212, 175, 55, 0.35);
+  border-top: 4px solid var(--tali-burgundy);
   border-radius: 50%;
   width: 50px;
   height: 50px;

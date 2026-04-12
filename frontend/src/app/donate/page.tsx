@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Script from 'next/script';
 import './../globals.css';
+import './donate-theme.css';
 
 interface ActiveEvent {
   id: number;
@@ -120,8 +121,8 @@ export default function DonatePage() {
           name: isAnonymous ? 'Anonymous Donor' : name,
         },
         customizations: {
-          title: "TALI Donation",
-          description: "Generous support for TALI initiatives.",
+          title: "ART FOR ABILITY",
+          description: "Creative Inclusion & Enterprise Auction — support for TALI.",
           logo: "https://www.theabilitylife.org/favicon.ico",
         },
         callback: async function (payment: any) {
@@ -156,6 +157,7 @@ export default function DonatePage() {
   // Render a success screen if payment verified
   if (paymentState === 'SUCCESS') {
     return (
+      <div className="art-for-ability">
       <div className="container" style={{ textAlign: 'center', paddingTop: '80px' }}>
         <div style={{ fontSize: '48px', color: 'var(--tali-green)', marginBottom: '16px' }}>✓</div>
         <h1 className="title" style={{ fontSize: '32px' }}>Thank You!</h1>
@@ -167,11 +169,12 @@ export default function DonatePage() {
           Make another donation
         </button>
       </div>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="art-for-ability">
       <Script src="https://checkout.flutterwave.com/v3.js" strategy="lazyOnload" />
 
       <nav className="nav-logo">
@@ -187,8 +190,11 @@ export default function DonatePage() {
           <div className="hero-logo-wrap">
             <img src="/tali-logo.avif" alt="TALI Logo" className="hero-logo-img" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
-          <h1 className="hero-title">Giving is Living</h1>
-          <p className="hero-subtitle">Empowering lives, one donation at a time.</p>
+          <p className="hero-eyebrow">The Ability Life Initiative</p>
+          <h1 className="hero-title">
+            <span className="hero-title-line">ART FOR <span className="hero-title-accent">ABILITY</span></span>
+          </h1>
+          <p className="hero-subtitle">Where art meets impact — funding dreams and building futures. Your gift supports seed grants for entrepreneurs with disabilities across Nigeria.</p>
         </div>
       </section>
 
@@ -207,7 +213,7 @@ export default function DonatePage() {
         <form className="card glass-card" onSubmit={handleFlutterwavePayment}>
           <header className="header" style={{ marginBottom: 32 }}>
             <h1 className="title" style={{ fontSize: 24 }}>Make a Donation</h1>
-            <p className="subtitle">Your contribution helps us bridge the gap for persons living with disabilities in Nigeria.</p>
+            <p className="subtitle">Creative Inclusion &amp; Enterprise Auction — every contribution helps fund seed grants and TALI programmes.</p>
           </header>
 
           <div className="form-group">
@@ -344,6 +350,6 @@ export default function DonatePage() {
       <footer style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', fontSize: 13 }}>
         &copy; {new Date().getFullYear()} The Ability Life Initiative. All rights reserved.
       </footer>
-    </>
+    </div>
   );
 }
