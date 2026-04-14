@@ -27,6 +27,7 @@ from rest_framework.authtoken.models import Token
 
 from .models import Event, Donation, AdminEmail, LoginCode
 from .serializers import EventSummarySerializer, RecentDonationSerializer, DonationCreateSerializer, AdminDonationSerializer
+from .email_utils import send_tali_email, send_donation_receipt
 
 class ActiveEventSummaryView(APIView):
     def get(self, request):
@@ -122,6 +123,10 @@ class ConfirmBankTransferView(APIView):
         donation.payment_status = 'SUCCESS'
         donation.is_verified = True
         donation.save()
+        
+        # Send donation receipt
+        send_donation_receipt(donation)
+        
         return Response({'message': 'Bank transfer confirmed successfully'}, status=status.HTTP_200_OK)
 
 class VerifyFlutterwavePaymentView(APIView):
@@ -154,6 +159,7 @@ class VerifyFlutterwavePaymentView(APIView):
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
+                send_donation_receipt(donation)
                 return Response({'status': 'verified'}, status=status.HTTP_200_OK)
         
         donation.payment_status = 'FAILED'
@@ -170,12 +176,11 @@ class RequestLoginCodeView(APIView):
         LoginCode.objects.create(email=email, code=code)
         
         try:
-            send_mail(
+            send_tali_email(
                 'Your Admin Login Code',
-                f'Your code is {code}. It expires in 10 minutes.',
-                'noreply@theabilitylife.org',
-                [email],
-                fail_silently=False,
+                'api/emails/admin_login_code.html',
+                {'code': code},
+                [email]
             )
         except Exception as e:
             print(f'Could not send email for RequestLoginCodeView, here is the code for test {code} and error {e}')
@@ -342,6 +347,7 @@ class ManualDonationView(APIView):
                 payment_status='SUCCESS',
                 is_verified=True
             )
+            send_donation_receipt(donation)
             return Response(AdminDonationSerializer(donation).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -378,6 +384,7 @@ class VerifyFlutterwaveByRefView(APIView):
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
+                send_donation_receipt(donation)
                 return Response({'status': 'verified'}, status=status.HTTP_200_OK)
                 
         return Response({'status': 'Not successful on Flutterwave'}, status=status.HTTP_400_BAD_REQUEST)
@@ -436,6 +443,7 @@ def flutterwave_webhook(request):
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
+                send_donation_receipt(donation)
                 return Response({'status': 'Payment verified'}, status=status.HTTP_200_OK)
         except Donation.DoesNotExist:
             return Response({'error': 'Donation not found'}, status=status.HTTP_404_NOT_FOUND)
