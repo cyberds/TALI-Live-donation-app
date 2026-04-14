@@ -26,6 +26,7 @@ export default function DonatePage() {
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferRef, setTransferRef] = useState<string | null>(null);
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [activeDonationId, setActiveDonationId] = useState<number | null>(null);
 
   // Dynamically loaded event data (bank info + ID)
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null);
@@ -75,13 +76,40 @@ export default function DonatePage() {
     setFormStep(2);
   };
 
-  const goToReviewStep = () => {
+  const goToReviewStep = async () => {
     if (!hasIdentity) return;
     setTransferError(null);
-    setFormStep(3);
+    setLoading(true);
+
+    try {
+      if (activeDonationId) {
+        // Update existing intent
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${activeDonationId}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donor_name: name,
+            email,
+            phone,
+            is_anonymous: isAnonymous,
+            amount,
+            payment_mode: 'INTENT'
+          })
+        });
+      } else {
+        // Create new intent
+        const data = await createDonation('INTENT');
+        setActiveDonationId(data.id);
+      }
+      setFormStep(3);
+    } catch (err) {
+      console.error("Failed to save intent:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const createDonation = async (paymentMode: 'FLUTTERWAVE' | 'BANK_TRANSFER') => {
+  const createDonation = async (paymentMode: 'FLUTTERWAVE' | 'BANK_TRANSFER' | 'INTENT') => {
     if (!activeEvent) {
       throw new Error('No active event found');
     }
@@ -111,7 +139,23 @@ export default function DonatePage() {
     setPaymentState(null);
 
     try {
-      const data = await createDonation('FLUTTERWAVE');
+      let currentDonationId = activeDonationId;
+      let transactionReference = '';
+
+      if (currentDonationId) {
+        // Update intent to FLUTTERWAVE
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${currentDonationId}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_mode: 'FLUTTERWAVE' })
+        });
+        const data = await res.json();
+        transactionReference = data.transaction_reference;
+      } else {
+        const data = await createDonation('FLUTTERWAVE');
+        currentDonationId = data.id;
+        transactionReference = data.transaction_reference;
+      }
 
       // 2. Guard: Check if Flutterwave SDK loaded
       // @ts-ignore
@@ -125,7 +169,7 @@ export default function DonatePage() {
       // @ts-ignore
       FlutterwaveCheckout({
         public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY || "FLWPUBK_TEST-dummy-key",
-        tx_ref: data.transaction_reference,
+        tx_ref: transactionReference,
         amount: amount,
         currency: "NGN",
         payment_options: "card,banktransfer,ussd",
@@ -141,7 +185,7 @@ export default function DonatePage() {
         },
         callback: async function (payment: any) {
           try {
-            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${data.id}/verify/`, {
+            const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${currentDonationId}/verify/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ transaction_id: payment.transaction_id })
@@ -173,8 +217,21 @@ export default function DonatePage() {
     setTransferLoading(true);
     setTransferError(null);
     try {
-      const data = await createDonation('BANK_TRANSFER');
-      setTransferRef(data.transaction_reference || null);
+      let transactionReference = '';
+      if (activeDonationId) {
+        // Update intent to BANK_TRANSFER
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${activeDonationId}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payment_mode: 'BANK_TRANSFER' })
+        });
+        const data = await res.json();
+        transactionReference = data.transaction_reference;
+      } else {
+        const data = await createDonation('BANK_TRANSFER');
+        transactionReference = data.transaction_reference;
+      }
+      setTransferRef(transactionReference || null);
     } catch (err) {
       setTransferError('Could not submit your transfer notice right now. Please try again.');
     } finally {
