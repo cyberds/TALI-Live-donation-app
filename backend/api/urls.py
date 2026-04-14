@@ -7,6 +7,7 @@ urlpatterns = [
     path('events/<int:event_id>/summary/', views.EventSummaryView.as_view(), name='event-summary'),
     path('events/<int:event_id>/recent-donations/', views.RecentDonationsView.as_view(), name='recent-donations'),
     path('donations/', views.DonationListCreateView.as_view(), name='donation-create'),
+    path('donations/<int:donation_id>/', views.DonationUpdateView.as_view(), name='donation-update'),
     path('donations/<int:donation_id>/confirm-transfer/', views.ConfirmBankTransferView.as_view(), name='confirm-transfer'),
     path('donations/<int:donation_id>/verify/', views.VerifyFlutterwavePaymentView.as_view(), name='verify-payment'),
     path('webhooks/flutterwave/', views.flutterwave_webhook, name='flutterwave-webhook'),

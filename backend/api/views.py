@@ -227,8 +227,11 @@ def get_filtered_transactions(request):
         
     method = request.query_params.get('method', 'All')
     if method != 'All':
-        mapped = 'FLUTTERWAVE' if method == 'Flutterwave' else 'BANK_TRANSFER'
-        donations = donations.filter(payment_mode=mapped)
+        mapped = 'FLUTTERWAVE' if method == 'Flutterwave' else \
+                 'BANK_TRANSFER' if method == 'Bank Transfer' else \
+                 'MANUAL' if method == 'Manual' else None
+        if mapped:
+            donations = donations.filter(payment_mode=mapped)
         
     status_param = request.query_params.get('status', 'All')
     if status_param != 'All':
@@ -320,15 +323,25 @@ class ManualDonationView(APIView):
             if not event:
                  return Response({"error": "No active event found"}, status=status.HTTP_404_NOT_FOUND)
 
+        payment_mode = request.data.get('payment_mode', 'MANUAL')
         serializer = DonationCreateSerializer(data=request.data)
         if serializer.is_valid():
             donation = serializer.save(
                 event=event,
-                payment_mode='BANK_TRANSFER',
+                payment_mode=payment_mode,
                 payment_status='SUCCESS',
                 is_verified=True
             )
             return Response(AdminDonationSerializer(donation).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DonationUpdateView(APIView):
+    def patch(self, request, donation_id):
+        donation = get_object_or_404(Donation, id=donation_id)
+        serializer = DonationCreateSerializer(donation, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_donation = serializer.save()
+            return Response(AdminDonationSerializer(updated_donation).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

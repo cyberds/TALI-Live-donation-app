@@ -20,6 +20,8 @@ class Donation(models.Model):
     PAYMENT_MODE_CHOICES = [
         ('FLUTTERWAVE', 'Flutterwave'),
         ('BANK_TRANSFER', 'Bank Transfer'),
+        ('MANUAL', 'Manual Entry'),
+        ('INTENT', 'Payment Intent'),
     ]
 
     PAYMENT_STATUS_CHOICES = [
@@ -48,13 +50,26 @@ class Donation(models.Model):
         return f"{name} - {self.amount} ({self.get_payment_status_display()})"
     
     def save(self, *args, **kwargs):
-        if not self.transaction_reference:
+        if not self.transaction_reference or self.payment_mode != 'INTENT':
+            prefix = 'TALI'
             if self.payment_mode == 'BANK_TRANSFER':
-                self.transaction_reference = f"TALI-BT-{uuid.uuid4().hex[:12].upper()}"
+                prefix = 'TALI-BT'
             elif self.payment_mode == 'FLUTTERWAVE':
-                self.transaction_reference = f"TALI-FLW-{uuid.uuid4().hex[:12].upper()}"
-            else:
-                self.transaction_reference = f"TALI-{uuid.uuid4().hex[:12].upper()}"
+                prefix = 'TALI-FLW'
+            elif self.payment_mode == 'MANUAL':
+                prefix = 'TALI-MAN'
+            
+            # If no ref, or if it's a generic intent ref being upgraded
+            if not self.transaction_reference:
+                self.transaction_reference = f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
+            elif self.transaction_reference.startswith('TALI-') and '-' not in self.transaction_reference[5:]: 
+                # This catches 'TALI-XXXX' but not 'TALI-BT-XXXX'
+                if (self.payment_mode == 'BANK_TRANSFER' and not self.transaction_reference.startswith('TALI-BT-')) or \
+                   (self.payment_mode == 'FLUTTERWAVE' and not self.transaction_reference.startswith('TALI-FLW-')) or \
+                   (self.payment_mode == 'MANUAL' and not self.transaction_reference.startswith('TALI-MAN-')):
+                    suffix = self.transaction_reference.split('-', 1)[1]
+                    self.transaction_reference = f"{prefix}-{suffix}"
+                    
         super().save(*args, **kwargs)
 
 class AdminEmail(models.Model):

@@ -543,21 +543,27 @@ body:has(.donate-page) {
 @media (max-width: 960px) {
   .donate-stage {
     grid-template-columns: 1fr;
+    padding: 0 4%;
+    overflow: visible;
   }
 
   .donate-art-col {
     align-items: flex-start;
     padding-top: 1.2rem;
+    padding-bottom: 0;
   }
 
   .donate-art-image {
-    width: min(88vw, 520px);
-    max-height: 65vh;
+    width: min(92vw, 520px);
+    max-height: 55vh;
   }
 
   .donate-panel--form {
-    margin: -3.2rem 1rem 1.2rem;
+    margin: -6rem auto 2.5rem;
+    width: 100%;
+    max-width: 480px;
     max-height: none;
+    overflow: visible;
   }
 }
 

@@ -48,6 +48,8 @@ export default function TransactionsPage() {
   const [manualPhone, setManualPhone] = useState('');
   const [manualAmount, setManualAmount] = useState('');
   const [manualIsAnonymous, setManualIsAnonymous] = useState(false);
+  const [manualPaymentMode, setManualPaymentMode] = useState('MANUAL');
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -124,6 +126,7 @@ export default function TransactionsPage() {
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/transactions/export/?${queryParams.toString()}`;
       
+      setActionLoading(true);
       fetch(url, { headers: { 'Authorization': `Token ${token}` } })
          .then(res => res.blob())
          .then(blob => {
@@ -134,24 +137,30 @@ export default function TransactionsPage() {
              document.body.appendChild(a);
              a.click();
              a.remove();
-         });
+         })
+         .finally(() => setActionLoading(false));
   };
 
   const handleConfirmTransfer = async (id: number) => {
     const token = localStorage.getItem('tali_admin_token');
     if (!token) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${id}/confirm-transfer/`, { 
         method: 'POST',
         headers: { 'Authorization': `Token ${token}` }
       });
       if (res.ok) fetchTransactions();
-    } catch (err) {}
+    } catch (err) {
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleVerifyFlutterwave = async (id: number) => {
     const token = localStorage.getItem('tali_admin_token');
     if (!token) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/donations/${id}/verify-ref/`, { 
         method: 'POST',
@@ -159,7 +168,10 @@ export default function TransactionsPage() {
       });
       if (res.ok) fetchTransactions();
       // Silent fail — the status badge will stay as "Pending" which is the correct UX
-    } catch (err) {}
+    } catch (err) {
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleSubmitManual = async (e: React.FormEvent) => {
@@ -181,7 +193,8 @@ export default function TransactionsPage() {
                   email: manualEmail,
                   phone: manualPhone,
                   amount: manualAmount,
-                  is_anonymous: manualIsAnonymous
+                  is_anonymous: manualIsAnonymous,
+                  payment_mode: manualPaymentMode
               })
           });
 
@@ -192,6 +205,7 @@ export default function TransactionsPage() {
               setManualPhone('');
               setManualAmount('');
               setManualIsAnonymous(false);
+              setManualPaymentMode('MANUAL');
               fetchTransactions();
           } else {
               const data = await res.json();
@@ -240,9 +254,9 @@ export default function TransactionsPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Manual Entry
                 </button>
-                <button className="btn-secondary" onClick={handleExportCSV} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10 }}>
+                <button className="btn-secondary" onClick={handleExportCSV} disabled={actionLoading} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10, opacity: actionLoading ? 0.7 : 1 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Export CSV
+                    {actionLoading ? 'Exporting...' : 'Export CSV'}
                 </button>
            </div>
        </div>
@@ -262,6 +276,7 @@ export default function TransactionsPage() {
                <button className={method === 'All' ? 'active' : ''} onClick={() => setMethod('All')}>All</button>
                <button className={method === 'Flutterwave' ? 'active' : ''} onClick={() => setMethod('Flutterwave')}>Flutterwave</button>
                <button className={method === 'Bank Transfer' ? 'active' : ''} onClick={() => setMethod('Bank Transfer')}>Bank Transfer</button>
+               <button className={method === 'Manual' ? 'active' : ''} onClick={() => setMethod('Manual')}>Manual Entry</button>
            </div>
 
            <div className="filter-toggle">
@@ -317,7 +332,11 @@ export default function TransactionsPage() {
                           <td style={{color: 'var(--text-secondary)'}}>{tx.is_anonymous && !unmaskedDonors.has(tx.id) ? 'Hidden' : tx.email}</td>
                           <td style={{fontWeight: 700}}>₦{Number(tx.amount).toLocaleString()}</td>
                           <td>
-                             <span className="method-pill">{tx.payment_mode === 'BANK_TRANSFER' ? 'Bank Transfer' : 'Flutterwave'}</span>
+                             <span className="method-pill">
+                                {tx.payment_mode === 'BANK_TRANSFER' ? 'Bank Transfer' : 
+                                 tx.payment_mode === 'MANUAL' ? 'Manual Entry' :
+                                 tx.payment_mode === 'INTENT' ? 'Intent' : 'Flutterwave'}
+                             </span>
                           </td>
                           <td style={{fontSize: 13, color: 'var(--text-secondary)'}}>
                              <div>{new Date(tx.created_at).toLocaleDateString()}</div>
@@ -327,12 +346,16 @@ export default function TransactionsPage() {
                              <span className={`status-badge status-${tx.payment_status.toLowerCase()}`}>
                                 {tx.payment_status === 'SUCCESS' ? 'Confirmed' : 'Pending'}
                              </span>
-                             {tx.payment_mode === 'BANK_TRANSFER' && tx.payment_status !== 'SUCCESS' && (
-                                <button className="confirm-btn-mini" onClick={() => handleConfirmTransfer(tx.id)}>Confirm</button>
-                             )}
-                             {tx.payment_mode === 'FLUTTERWAVE' && tx.payment_status !== 'SUCCESS' && (
-                                <button className="confirm-btn-mini" onClick={() => handleVerifyFlutterwave(tx.id)}>Verify</button>
-                             )}
+                              {tx.payment_mode === 'BANK_TRANSFER' && tx.payment_status !== 'SUCCESS' && (
+                                 <button className="confirm-btn-mini" onClick={() => handleConfirmTransfer(tx.id)} disabled={actionLoading}>
+                                     {actionLoading ? '...' : 'Confirm'}
+                                 </button>
+                              )}
+                              {tx.payment_mode === 'FLUTTERWAVE' && tx.payment_status !== 'SUCCESS' && (
+                                 <button className="confirm-btn-mini" onClick={() => handleVerifyFlutterwave(tx.id)} disabled={actionLoading}>
+                                     {actionLoading ? '...' : 'Verify'}
+                                 </button>
+                              )}
                           </td>
                           <td>
                              <div style={{display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)'}}>
@@ -365,7 +388,7 @@ export default function TransactionsPage() {
 
        {/* Manual Entry Modal */}
        {isModalOpen && (
-           <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+           <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setIsModalOpen(false)}>
                <div className="modal-content" onClick={e => e.stopPropagation()}>
                     <div className="modal-header">
                         <h3>Manual Donation Entry</h3>
