@@ -61,6 +61,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
      }
   }, [token]);
 
+  const triggerCelebration = async (eventId: number) => {
+    if (!token) return;
+    try {
+       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/events/${eventId}/celebrate/`, {
+          method: 'POST',
+          headers: { 'Authorization': `Token ${token}` }
+       });
+    } catch (e) {
+       console.error("Celebration failed", e);
+    }
+  };
+
   // Close mobile menu on route change
   useEffect(() => {
      setIsMobileMenuOpen(false);
@@ -172,7 +184,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // DASHBOARD LAYOUT
   return (
-    <AdminContext.Provider value={{ selectedEventId, setSelectedEventId, events, setEvents }}>
+    <AdminContext.Provider value={{ selectedEventId, setSelectedEventId, events, setEvents, triggerCelebration }}>
     <div className="admin-layout">
       {/* Mobile Header */}
       <div className="mobile-header">

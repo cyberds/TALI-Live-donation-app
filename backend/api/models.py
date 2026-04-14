@@ -10,6 +10,7 @@ class Event(models.Model):
     account_number = models.CharField(max_length=20, blank=True, null=True)
     purpose_link = models.URLField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    celebration_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -20,5 +20,6 @@ urlpatterns = [
     path('admin/events/', views.AdminEventListView.as_view(), name='admin-events'),
     path('admin/donations/manual/', views.ManualDonationView.as_view(), name='admin-manual-donation'),
     path('admin/donations/<int:donation_id>/verify-ref/', views.VerifyFlutterwaveByRefView.as_view(), name='admin-verify-ref'),
+    path('admin/events/<int:event_id>/celebrate/', views.TriggerCelebrationView.as_view(), name='admin-celebrate'),
     path('webhooks/github-deploy/', views.GithubWebhookDeployView.as_view(), name='github-deploy'),
 ]

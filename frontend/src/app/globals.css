@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --tali-blue: #1F305C;
   --tali-orange: #D24B25;

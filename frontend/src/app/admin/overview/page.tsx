@@ -26,7 +26,7 @@ interface Donation {
 }
 
 export default function OverviewPage() {
-  const { selectedEventId } = useAdminContext();
+  const { selectedEventId, triggerCelebration } = useAdminContext();
   const [range, setRange] = useState<'today' | 'week' | 'all'>('today');
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [liveDonations, setLiveDonations] = useState<Donation[]>([]);
@@ -117,11 +117,25 @@ export default function OverviewPage() {
   return (
     <div className="overview-container">
       <div className="overview-header">
-         <h2>Overview</h2>
-         <div className="range-toggles">
-            <button className={range === 'today' ? 'active' : ''} onClick={() => setRange('today')}>Today</button>
-            <button className={range === 'week' ? 'active' : ''} onClick={() => setRange('week')}>This Week</button>
-            <button className={range === 'all' ? 'active' : ''} onClick={() => setRange('all')}>All Time</button>
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+           <h2 style={{ lineHeight: 1 }}>Overview</h2>
+           <div className="live-indicator" style={{ marginBottom: 0 }}><span className="dot"></span> Active Event</div>
+         </div>
+         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {selectedEventId && (
+              <button 
+                onClick={() => triggerCelebration(selectedEventId)}
+                className="btn-secondary" 
+                style={{ height: '36px', padding: '0 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', borderStyle: 'dashed' }}
+              >
+                <span role="img" aria-label="party">🎉</span> Celebrate
+              </button>
+            )}
+            <div className="range-toggles">
+               <button className={range === 'today' ? 'active' : ''} onClick={() => setRange('today')}>Today</button>
+               <button className={range === 'week' ? 'active' : ''} onClick={() => setRange('week')}>This Week</button>
+               <button className={range === 'all' ? 'active' : ''} onClick={() => setRange('all')}>All Time</button>
+            </div>
          </div>
       </div>
 

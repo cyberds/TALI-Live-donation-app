@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
+import Confetti from '@/components/magicui/confetti';
+import { fireEliteCelebration } from '@/lib/confetti-presets';
 import './live.css';
 
 interface BaseStats {
@@ -39,6 +41,9 @@ export default function LiveDisplay() {
   const [stats, setStats] = useState<BaseStats | null>(null);
   const [percent, setPercent] = useState(0);
   const [recentDonors, setRecentDonors] = useState<LiveDonation[]>([]);
+  const lastCelebrationCount = useRef<number | null>(null);
+  const lastMilestone = useRef<string | null>(null);
+  const confettiRef = useRef<any>(null);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`)
@@ -81,6 +86,23 @@ export default function LiveDisplay() {
             if (!prev) return prev;
             const p = Math.min((Number(data.raised_amount) / prev.target_amount) * 100, 100);
             setPercent(p);
+            
+            // Celebration Trigger
+            if (data.celebration_count !== undefined) {
+               if (lastCelebrationCount.current !== null && data.celebration_count > lastCelebrationCount.current) {
+                  fireEliteCelebration(confettiRef.current?.fire);
+               }
+               lastCelebrationCount.current = data.celebration_count;
+            }
+            
+            // Milestone Celebration
+            if (data.milestone && data.milestone !== lastMilestone.current) {
+               if (data.milestone.includes("Goal Achieved")) {
+                   fireEliteCelebration(confettiRef.current?.fire);
+               }
+               lastMilestone.current = data.milestone;
+            }
+
             return {
               ...prev,
               raised_amount: Number(data.raised_amount) || prev.raised_amount,
@@ -126,6 +148,7 @@ export default function LiveDisplay() {
 
   return (
     <div className="live-page">
+      <Confetti ref={confettiRef} manualstart />
       {/* Slim header — text + logo only; room reserved for the donation arena */}
       <header className="live-header" aria-label="Event">
         <div className="live-header-bg" aria-hidden />

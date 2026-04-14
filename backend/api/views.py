@@ -296,6 +296,16 @@ class AdminOverviewView(APIView):
         })
 
 
+class TriggerCelebrationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, event_id):
+        event = get_object_or_404(Event, id=event_id)
+        event.celebration_count += 1
+        event.save()
+        return Response({'success': True, 'celebration_count': event.celebration_count})
+
+
 from rest_framework.pagination import LimitOffsetPagination
 
 class AdminTransactionsView(APIView):
@@ -447,6 +457,7 @@ def sse_event_stream(request, event_id):
     def event_stream():
         last_donation_id = 0
         last_count = -1
+        last_celebration_count = -1
         start_time = time.time()
         max_duration = 300  # 5 minute max connection, client will reconnect
         
@@ -464,8 +475,9 @@ def sse_event_stream(request, event_id):
                     
                 successful_donations = event.donations.filter(payment_status='SUCCESS')
                 current_count = successful_donations.count()
+                current_celebration_count = event.celebration_count
                 
-                if current_count != last_count:
+                if current_count != last_count or current_celebration_count != last_celebration_count:
                     aggregates = successful_donations.aggregate(
                         raised_amount=Sum('amount'),
                         highest_donation=Max('amount')
@@ -474,13 +486,13 @@ def sse_event_stream(request, event_id):
                     new_donations = successful_donations.filter(id__gt=last_donation_id).order_by('id')
                     new_donation_data = []
                     for don in new_donations:
-                        new_donation_data.append({
+                        new_donation_data.insert(0, {
                             'id': don.id,
                             'donor_display': "Anonymous" if don.is_anonymous else (don.donor_name or "Unknown"),
                             'amount': str(don.amount),
                             'created_at': don.created_at.isoformat()
                         })
-                        last_donation_id = don.id
+                        last_donation_id = max(last_donation_id, don.id)
                     
                     highest_donor_record = successful_donations.order_by('-amount').first()
                     highest_donor = "Anonymous"
@@ -505,11 +517,13 @@ def sse_event_stream(request, event_id):
                         'highest_donation': str(aggregates['highest_donation'] or 0),
                         'highest_donor': highest_donor,
                         'new_donations': new_donation_data,
-                        'milestone': milestone_msg
+                        'milestone': milestone_msg,
+                        'celebration_count': current_celebration_count
                     }
                     
                     yield f"data: {json.dumps(data)}\n\n"
                     last_count = current_count
+                    last_celebration_count = current_celebration_count
                 else:
                     yield ": heartbeat\n\n"
             except Exception as e:

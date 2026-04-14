@@ -17,7 +17,7 @@ interface Donation {
 }
 
 export default function TransactionsPage() {
-  const { selectedEventId } = useAdminContext();
+  const { selectedEventId, triggerCelebration } = useAdminContext();
   const [transactions, setTransactions] = useState<Donation[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -167,7 +167,6 @@ export default function TransactionsPage() {
         headers: { 'Authorization': `Token ${token}` }
       });
       if (res.ok) fetchTransactions();
-      // Silent fail — the status badge will stay as "Pending" which is the correct UX
     } catch (err) {
     } finally {
       setActionLoading(false);
@@ -232,7 +231,6 @@ export default function TransactionsPage() {
       try {
         navigator.clipboard.writeText(text);
       } catch {
-        // Fallback for non-HTTPS contexts
         const ta = document.createElement('textarea');
         ta.value = text;
         document.body.appendChild(ta);
@@ -247,9 +245,21 @@ export default function TransactionsPage() {
 
   return (
     <div className="transactions-container">
-       <div className="transactions-header">
-           <h2>Transactions</h2>
-           <div style={{ display: 'flex', gap: 12 }}>
+        <div className="transactions-header">
+           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <h2 style={{ lineHeight: 1 }}>Transactions</h2>
+                <div className="live-indicator" style={{ marginBottom: 0 }}><span className="dot"></span> Active Event</div>
+           </div>
+           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                {selectedEventId && (
+                  <button 
+                    onClick={() => triggerCelebration(selectedEventId)}
+                    className="btn-secondary" 
+                    style={{ height: '36px', padding: '0 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', borderStyle: 'dashed' }}
+                  >
+                    <span role="img" aria-label="party">🎉</span> Celebrate
+                  </button>
+                )}
                 <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Manual Entry
@@ -259,7 +269,7 @@ export default function TransactionsPage() {
                     {actionLoading ? 'Exporting...' : 'Export CSV'}
                 </button>
            </div>
-       </div>
+        </div>
 
        <div className="filters-bar">
            <div className="search-box">
