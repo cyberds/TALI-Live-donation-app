@@ -129,46 +129,53 @@ export default function OverviewPage() {
          {/* Main content left */}
          <div className="overview-main">
             <div className="metrics-row">
-               <div className="metric-card">
-                  <div className="metric-label">Total Raised</div>
-                  <div className="metric-value">₦{metrics ? metrics.total_raised.toLocaleString() : '0'}</div>
-                  <div className="metric-subtext positive">+{metrics ? metrics.today_raised.toLocaleString() : '0'} Today</div>
-               </div>
-               <div className="metric-card">
-                  <div className="metric-label">Campaign Goal</div>
-                  <div className="metric-value" style={{color: 'var(--text-secondary)'}}>₦{metrics ? metrics.campaign_goal.toLocaleString() : '0'}</div>
-                  <div className="metric-subtext">Current campaign</div>
-               </div>
-               <div className="metric-card">
-                  <div className="metric-label">% Of Goal</div>
-                  <div className="metric-value">{metrics ? metrics.percent_funded.toFixed(1) : '0'}%</div>
-                  <div className="progress-mini">
-                     <div className="progress-mini-fill" style={{ width: `${metrics ? metrics.percent_funded : 0}%` }}></div>
-                  </div>
-               </div>
-               <div className="metric-card">
+                <div className="metric-card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+                   <div className="metric-label">Total Raised</div>
+                   <div className="metric-value">₦{metrics ? metrics.total_raised.toLocaleString() : '0'}</div>
+                   <div className="metric-subtext positive">+{metrics ? metrics.today_raised.toLocaleString() : '0'} Today</div>
+                </div>
+                <div className="metric-card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+                   <div className="metric-label">Campaign Goal</div>
+                   <div className="metric-value" style={{color: 'var(--text-secondary)'}}>₦{metrics ? metrics.campaign_goal.toLocaleString() : '0'}</div>
+                   <div className="metric-subtext">Current campaign</div>
+                </div>
+                <div className="metric-card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+                   <div className="metric-label">% Of Goal</div>
+                   <div className="metric-value">{metrics ? metrics.percent_funded.toFixed(1) : '0'}%</div>
+                   <div className="progress-mini">
+                      <div className="progress-mini-fill" style={{ width: `${metrics ? Math.min(metrics.percent_funded, 100) : 0}%` }}></div>
+                   </div>
+                </div>
+                <div className="metric-card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                   <div className="metric-label">Donors</div>
                   <div className="metric-value">{metrics ? metrics.donor_count : '0'}</div>
                   <div className="metric-subtext">{metrics ? metrics.anonymous_count : '0'} anonymous</div>
                </div>
             </div>
 
-            <div className="chart-card">
-               <div className="metric-label" style={{marginBottom: 24}}>Campaign Progress</div>
-               
-               <div className="progress-visuals">
-                   <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
-                       {metrics && metrics.campaign_goal > 0 && (
-                          <div style={{ width: '100%', maxWidth: '400px', display: 'flex', gap: '4px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
-                              <div style={{ width: `${(metrics.methods.FLUTTERWAVE / metrics.campaign_goal) * 100}%`, backgroundColor: 'var(--tali-blue)', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: 'white', fontSize: '12px', fontWeight: 600 }}>
-                                  {metrics.methods.FLUTTERWAVE > 0 && 'FLW'}
+             <div className="chart-card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+                <div className="metric-label" style={{marginBottom: 24}}>Campaign Progress</div>
+                
+                <div className="progress-visuals">
+                    <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
+                        {metrics && metrics.campaign_goal > 0 && (() => {
+                           const flwPercent = (metrics.methods.FLUTTERWAVE / metrics.campaign_goal) * 100;
+                           const trfPercent = (metrics.methods.BANK_TRANSFER / metrics.campaign_goal) * 100;
+                           const totalPercent = flwPercent + trfPercent;
+                           const scale = totalPercent > 100 ? 100 / totalPercent : 1;
+                           
+                           return (
+                              <div style={{ width: '100%', maxWidth: '400px', display: 'flex', gap: '4px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${flwPercent * scale}%`, backgroundColor: 'var(--tali-blue)', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: 'white', fontSize: '12px', fontWeight: 600, transition: 'width 0.3s ease' }}>
+                                      {metrics.methods.FLUTTERWAVE > 0 && 'FLW'}
+                                  </div>
+                                  <div style={{ width: `${trfPercent * scale}%`, backgroundColor: '#ff9500', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: 'white', fontSize: '12px', fontWeight: 600, transition: 'width 0.3s ease' }}>
+                                      {metrics.methods.BANK_TRANSFER > 0 && 'TRF'}
+                                  </div>
+                                  {totalPercent < 100 && <div style={{ flexGrow: 1, backgroundColor: '#f2f2f7' }}></div>}
                               </div>
-                              <div style={{ width: `${(metrics.methods.BANK_TRANSFER / metrics.campaign_goal) * 100}%`, backgroundColor: '#ff9500', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: 'white', fontSize: '12px', fontWeight: 600 }}>
-                                  {metrics.methods.BANK_TRANSFER > 0 && 'TRF'}
-                              </div>
-                              <div style={{ flexGrow: 1, backgroundColor: '#f2f2f7' }}></div>
-                          </div>
-                       )}
+                           );
+                        })()}
                        
                        <div style={{ display: 'flex', gap: '32px', marginTop: '20px', width: '100%', justifyContent: 'center' }}>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

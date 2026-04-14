@@ -330,7 +330,7 @@ body {
 .progress-raised-pill {
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   background: linear-gradient(145deg, #14110f 0%, #2a2320 45%, #14110f 100%);
   color: #fffef8;
   padding: clamp(14px, 2.2vh, 26px) clamp(28px, 3.5vw, 48px);

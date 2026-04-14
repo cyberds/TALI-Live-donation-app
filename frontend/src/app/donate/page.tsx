@@ -242,18 +242,21 @@ export default function DonatePage() {
   // Render a success screen if payment verified
   if (paymentState === 'SUCCESS') {
     return (
-      <div className="art-for-ability">
-      <div className="container" style={{ textAlign: 'center', paddingTop: '80px' }}>
-        <div style={{ fontSize: '48px', color: 'var(--tali-green)', marginBottom: '16px' }}>✓</div>
-        <h1 className="title" style={{ fontSize: '32px' }}>Thank You!</h1>
-        <p className="subtitle" style={{ fontSize: '16px', margin: '16px 0 32px' }}>
-          Your generous donation has been securely received and recorded.
-          Together we are bridging the gap for persons living with disabilities.
-        </p>
-        <button className="btn-secondary" onClick={() => { setPaymentState(null); setAmount(''); }}>
-          Make another donation
-        </button>
-      </div>
+      <div className="art-for-ability donate-page">
+        <div className="donate-bg-layer" />
+        <main className="donate-stage" style={{ gridTemplateColumns: '1fr' }}>
+          <section className="donate-panel" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '540px', margin: 'auto' }}>
+            <div style={{ fontSize: '64px', color: 'var(--sage)', marginBottom: '1rem' }}>✓</div>
+            <h1 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: '2.5rem', margin: '0 0 1rem' }}>Thank You!</h1>
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: 'rgba(31, 27, 22, 0.8)', marginBottom: '2rem' }}>
+              Your generous donation has been securely received and recorded.
+              Together we are bridging the gap for persons living with disabilities.
+            </p>
+            <button className="btn-primary" onClick={() => { setPaymentState(null); setAmount(''); }} style={{ width: 'auto', padding: '0.8rem 2rem' }}>
+              Make another donation
+            </button>
+          </section>
+        </main>
       </div>
     );
   }

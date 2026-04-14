@@ -269,7 +269,7 @@ class AdminOverviewView(APIView):
 
         total_raised = donations.aggregate(Sum('amount'))['amount__sum'] or 0
         campaign_goal = event.target_amount or 1
-        percent_funded = min((total_raised / campaign_goal) * 100, 100)
+        percent_funded = (total_raised / campaign_goal) * 100
         
         donor_count = donations.count()
         anonymous_count = donations.filter(is_anonymous=True).count()

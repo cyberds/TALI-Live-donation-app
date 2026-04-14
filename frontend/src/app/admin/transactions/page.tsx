@@ -254,7 +254,7 @@ export default function TransactionsPage() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Manual Entry
                 </button>
-                <button className="btn-secondary" onClick={handleExportCSV} disabled={actionLoading} style={{ padding: '0 20px', height: 40, fontSize: 13, borderRadius: 10, opacity: actionLoading ? 0.7 : 1 }}>
+                <button className="btn-secondary" onClick={handleExportCSV} disabled={actionLoading} style={{ padding: '0 20px', height: 40, width: 'fit-content', fontSize: 13, borderRadius: 10, opacity: actionLoading ? 0.7 : 1 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 8}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     {actionLoading ? 'Exporting...' : 'Export CSV'}
                 </button>
@@ -293,7 +293,7 @@ export default function TransactionsPage() {
            </div>
        </div>
 
-       <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+       <div className="card" style={{ padding: 0, overflowX: 'auto', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
            <table className="admin-table">
               <thead>
                  <tr>

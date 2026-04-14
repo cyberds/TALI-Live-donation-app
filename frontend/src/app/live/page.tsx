@@ -178,7 +178,10 @@ export default function LiveDisplay() {
           <div
             className="progress-raised-pill"
             data-text={`₦${stats.raised_amount.toLocaleString()}`}
-            style={{ left: `${percent}%` }}
+            style={{ 
+              left: `${percent}%`,
+              transform: `translate(-${percent}%, -50%)`
+            }}
           >
             <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
           </div>
