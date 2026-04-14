@@ -40,7 +40,6 @@ export default function LiveDisplay() {
   const [percent, setPercent] = useState(0);
   const [recentDonors, setRecentDonors] = useState<LiveDonation[]>([]);
 
-  // Initial Fetch
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`)
       .then(res => res.json())
@@ -61,7 +60,6 @@ export default function LiveDisplay() {
       .catch(err => console.error(err));
   }, []);
 
-  // SSE Subscription with auto-reconnect
   useEffect(() => {
     let eventSource: EventSource | null = null;
     let retryDelay = 1000;
@@ -73,7 +71,7 @@ export default function LiveDisplay() {
       eventSource = new EventSource(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/stream/`);
 
       eventSource.onmessage = (event) => {
-        retryDelay = 1000; // Reset backoff on successful message
+        retryDelay = 1000;
         if (event.data === ': heartbeat') return;
         try {
           const data = JSON.parse(event.data);
@@ -99,14 +97,14 @@ export default function LiveDisplay() {
               return [...newOnes, ...prev].slice(0, 20);
             });
           }
-        } catch (err) { /* ignore parse errors */ }
+        } catch { /* ignore */ }
       };
 
       eventSource.onerror = () => {
         eventSource?.close();
         if (!isCancelled) {
           retryTimer = setTimeout(() => {
-            retryDelay = Math.min(retryDelay * 2, 30000); // Exponential backoff, max 30s
+            retryDelay = Math.min(retryDelay * 2, 30000);
             connect();
           }, retryDelay);
         }
@@ -128,46 +126,38 @@ export default function LiveDisplay() {
 
   return (
     <div className="live-page">
-      {/* ========== TOP: Logo ========== */}
-      {/* <div className="top-logo-bar">
-        <Image src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png" alt="TALI Logo" width={280} height={80} style={{ objectFit: 'contain' }} priority />
-      </div> */}
-
-      {/* ========== HERO: programme artwork + signature painting ========== */}
-      <header className="hero-section" aria-label="Event">
-        <div className="hero-art-layer" aria-hidden />
-        <div className="hero-inner">
-          <div className="hero-visual">
-            <div className="hero-image-frame">
-              <Image
-                src="/TALI%20MAIN%20PIC.png"
-                alt="TALI programme artwork — celebrating ability and inclusion"
-                width={720}
-                height={900}
-                className="hero-main-pic"
-                priority
-                sizes="(max-width: 900px) 100vw, 38vw"
-              />
-            </div>
+      {/* Slim header — text + logo only; room reserved for the donation arena */}
+      <header className="live-header" aria-label="Event">
+        <div className="live-header-bg" aria-hidden />
+        <div className="live-header-inner">
+          <div className="live-header-brand">
+            <Image
+              src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png"
+              alt="TALI"
+              width={200}
+              height={78}
+              className="live-header-logo"
+              priority
+            />
           </div>
-          <div className="hero-copy-panel">
+          <div className="live-header-copy">
             <p className="banner-eyebrow">Live auction · Banquet Hall, State House, Abuja</p>
             <h1 className="banner-title">{stats.title}</h1>
-            <p className="banner-tagline">Where Art Meets Impact · Funding Dreams, Building Futures</p>
-            <p className="banner-subtitle">Creative Inclusion &amp; Enterprise Auction</p>
-          </div>
-          <div className="hero-logo-container">
-            <Image src="https://static.wixstatic.com/media/782bc6_823dfb29a08e4cb380cc89b346e85845~mv2.png/v1/fill/w_484,h_226,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/TALI%20Logo%20Styles%20stroked-01.png" alt="TALI Logo" width={580} height={226} style={{ objectFit: 'contain' }} priority />
+            {/* <p className="banner-tagline">Where Art Meets Impact · Funding Dreams, Building Futures</p> */}
+            {/* <p className="banner-subtitle">Creative Inclusion &amp; Enterprise Auction</p> */}
           </div>
         </div>
       </header>
 
-      {/* ========== DONATIONS PROGRESS (prominent band) ========== */}
-      <section className="progress-section" aria-label="Fundraising progress">
-        <div className="progress-section-head">
-          <div className="progress-head-text">
+      {/* Primary focal band — ~2.5× previous bar height */}
+      <section className="live-donation-arena" aria-label="Fundraising progress">
+        <div className="donation-arena-top">
+          <div className="donation-arena-titles">
             <span className="progress-kicker">Live fundraising</span>
             <h2 className="progress-heading">Donations progress</h2>
+            <p className="donation-percent-badge" aria-live="polite">
+              {Math.round(percent)}% of goal
+            </p>
           </div>
           <div className="progress-head-stats">
             <div className="progress-stat-chip">
@@ -180,7 +170,8 @@ export default function LiveDisplay() {
             </div>
           </div>
         </div>
-        <div className="progress-bar-wrapper">
+
+        <div className="progress-bar-wrapper progress-bar-wrapper--arena">
           <div className="progress-track">
             <div className="progress-fill" style={{ width: `${percent}%` }} />
           </div>
@@ -192,6 +183,7 @@ export default function LiveDisplay() {
             <span className="pill-amount">₦{stats.raised_amount.toLocaleString()}</span>
           </div>
         </div>
+
         <div className="progress-meta">
           <div className="meta-left">
             Total donors <i className="fa-solid fa-users" aria-hidden /> {stats.donation_count}
@@ -203,44 +195,59 @@ export default function LiveDisplay() {
         </div>
       </section>
 
-      {/* ========== BOTTOM 3-COLUMN SECTION ========== */}
-      <div className="bottom-section">
+      {/* Main stage: signature art (space to shine) + hub + live feed */}
+      <main className="live-main">
+        <aside className="live-art-showcase" aria-label="Programme artwork">
+          {/* <div className="art-showcase-frame"> */}
+            <Image
+              src="/TALI%20MAIN%20PIC.png"
+              alt="TALI — signature programme artwork"
+              width={1200}
+              height={1900}
+              className="art-showcase-img"
+              // sizes="(max-width: 900px) 100vw, 24vw"
+              sizes="100vw"
+              style={{ width: 'auto', height: '100%', objectFit: 'contain' }}
+            />
+          {/* </div> */}
+          <p className="art-showcase-label">Art for Ability</p>
+        </aside>
 
-        {/* LEFT: Highest Donor Card */}
-        <div className="highest-donor-col">
-          <div className="highest-donor-card">
-            <div className="hd-trophy"><i className="fa-solid fa-trophy"></i></div>
-            <div className="hd-label">Highest<br />Single Donor</div>
-            <div className="hd-name">{stats.highest_donor}</div>
-            <div className="hd-amount">₦{stats.highest_donation.toLocaleString()}</div>
-          </div>
+        <div className="live-hub">
+          <section className="live-champion" aria-label="Highest donor">
+            <div className="highest-donor-card highest-donor-card--compact">
+              <div className="hd-trophy"><i className="fa-solid fa-trophy" aria-hidden /></div>
+              <div className="hd-label">Highest single donor</div>
+              <div className="hd-name">{stats.highest_donor}</div>
+              <div className="hd-amount">₦{stats.highest_donation.toLocaleString()}</div>
+            </div>
+          </section>
+
+          <section className="live-donate-panel" aria-label="How to donate">
+            <h2 className="donate-heading">To donate</h2>
+            <div className="donate-steps donate-steps--horizontal">
+              <div className="step">
+                <div className="step-icon"><i className="fa-solid fa-qrcode" aria-hidden /></div>
+                <p>Scan the<br />QR code</p>
+              </div>
+              <div className="step">
+                <div className="step-icon"><i className="fa-solid fa-mobile-screen-button" aria-hidden /></div>
+                <p>Fill the form<br />and amount</p>
+              </div>
+              <div className="step">
+                <div className="step-icon"><i className="fa-solid fa-circle-check" aria-hidden /></div>
+                <p>Proceed to<br />payment</p>
+              </div>
+            </div>
+            <div className="donate-footer">
+              <p>For more information, visit</p>
+              <strong>www.theabilitylife.org</strong>
+            </div>
+          </section>
         </div>
 
-        {/* CENTER: Donate Instructions */}
-        <div className="donate-instructions-col">
-          <h2 className="donate-heading">TO DONATE</h2>
-          <div className="donate-steps">
-            <div className="step">
-              <div className="step-icon"><i className="fa-solid fa-qrcode"></i></div>
-              <p>Scan the<br />QR Code</p>
-            </div>
-            <div className="step">
-              <div className="step-icon"><i className="fa-solid fa-mobile-screen-button"></i></div>
-              <p>Fill the form<br />and your desired<br />amount</p>
-            </div>
-            <div className="step">
-              <div className="step-icon"><i className="fa-solid fa-circle-check"></i></div>
-              <p>Proceed to<br />payment</p>
-            </div>
-          </div>
-          <div className="donate-footer">
-            <p>For more information, visit</p>
-            <strong>www.theabilitylife.org</strong>
-          </div>
-        </div>
-
-        {/* RIGHT: Recent Donors Scrollable Feed */}
-        <div className="recent-donors-col">
+        <section className="live-feed-col" aria-label="Recent donations">
+          <h3 className="live-feed-heading">Recent donations</h3>
           <div className="donors-scroll-container">
             {recentDonors.length > 0 ? recentDonors.map(don => (
               <div key={don.id} className="donor-row">
@@ -251,21 +258,18 @@ export default function LiveDisplay() {
                 <div className="donor-row-time">{timeAgo(don.created_at)}</div>
               </div>
             )) : (
-              <>
-                <div className="donor-row placeholder-row">
-                  <div className="donor-row-left">
-                    <div className="donor-row-name">Waiting for first donation...</div>
-                    <div className="donor-row-amount"></div>
-                  </div>
+              <div className="donor-row placeholder-row">
+                <div className="donor-row-left">
+                  <div className="donor-row-name">Waiting for first donation...</div>
+                  <div className="donor-row-amount" />
                 </div>
-              </>
+              </div>
             )}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      {/* Crowd silhouette at very bottom */}
-      <div className="crowd-bg"></div>
+      <div className="crowd-bg" aria-hidden />
     </div>
   );
 }
