@@ -29,6 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--=)j2#kqh83#(p447tjt(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+IN_PRODUCTION = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
@@ -134,6 +135,7 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -151,6 +153,16 @@ else:
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()
 ]
+
+# Security headers
+SECURE_BROWSER_XSS_FILTER = IN_PRODUCTION
+SECURE_CONTENT_TYPE_NOSNIFF = IN_PRODUCTION
+X_FRAME_OPTIONS = 'DENY'
+
+SECURE_SSL_REDIRECT = IN_PRODUCTION
+SESSION_COOKIE_SECURE = IN_PRODUCTION
+CSRF_COOKIE_SECURE = IN_PRODUCTION
+
 
 # Security headers for proxy (alwaysdata)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
