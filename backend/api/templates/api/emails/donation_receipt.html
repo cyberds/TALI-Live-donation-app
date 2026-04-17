@@ -6,11 +6,11 @@
     <title>Thank You for Your Donation - TALI</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f7f9fc;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
             margin: 0;
             padding: 0;
-            -webkit-font-smoothing: antialiased;
+            color: #1d1d1f;
         }
         .container {
             max-width: 600px;
@@ -18,124 +18,210 @@
             background-color: #ffffff;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #eef2f7;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #d2d2d7;
         }
-        .header {
+        .hero {
+            position: relative;
+            height: 240px;
             background-color: #1F305C;
-            padding: 30px;
+            background-image: linear-gradient(180deg, rgba(31, 48, 92, 0.3) 0%, rgba(31, 48, 92, 0.7) 100%), url('https://static.wixstatic.com/media/782bc6_8f009db96e4149d983dc93f9ef19c719~mv2.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #ffffff;
             text-align: center;
         }
-        .header img {
-            max-width: 120px;
-            height: auto;
+        .logo-small {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            border-radius: 50%;
+            background: #ffffff;
+            padding: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .hero-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            color: #ffffff;
+        }
+        .hero-subtitle {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+            opacity: 0.9;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
         .content {
-            padding: 40px;
-            color: #333333;
-            line-height: 1.6;
+            padding: 40px 48px;
         }
-        .h1 {
-            font-size: 24px;
-            font-weight: 700;
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
             color: #1F305C;
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 16px;
         }
-        .receipt-card {
-            background-color: #fcfdf9;
-            border: 1px solid #9BCB6C;
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            color: #424245;
+        }
+        .receipt-container {
+            background-color: #fbfbfd;
+            border: 1px solid #d2d2d7;
             border-radius: 8px;
             padding: 24px;
-            margin: 30px 0;
+            margin: 32px 0;
+        }
+        .receipt-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e5e7;
+            padding-bottom: 12px;
         }
         .receipt-row {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 8px;
+            margin-bottom: 14px;
         }
-        .receipt-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
+
+        @media(max-width:600px){
+            .receipt-row{
+                flex-wrap: wrap
+            }
         }
-        .label {
-            color: #64748b;
-            font-weight: 500;
+
+        .receipt-label {
+            color: #86868b;
+            font-size: 14px;
         }
-        .value {
-            color: #1F305C;
+        .receipt-value {
+            font-weight: 600;
+            color: #1d1d1f;
+            font-size: 14px;
+        }
+        .amount-highlight {
+            font-size: 24px;
+            color: #9BCB6C;
             font-weight: 700;
         }
-        .amount {
-            color: #9BCB6C;
-            font-size: 20px;
-        }
-        .footer {
-            background-color: #f8fafc;
-            padding: 24px;
-            text-align: center;
-            color: #64748b;
-            font-size: 13px;
-            border-top: 1px solid #eef2f7;
-        }
-        .footer p {
-            margin: 4px 0;
-        }
-        .brand-line {
-            height: 4px;
-            background: linear-gradient(to right, #1F305C, #D24B25, #9BCB6C);
-        }
-        .thank-you-msg {
+        .quote {
             text-align: center;
             font-style: italic;
-            color: #475569;
-            margin-top: 20px;
+            color: #d27c25ff;
+            margin: 32px 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        .footer {
+            padding: 32px;
+            text-align: center;
+            background-color: #f5f5f7;
+            font-size: 9px;
+            color: #86868b;
+            border-top: 1px solid #d2d2d7;
+        }
+        .footer p{
+            font-size: 12px;
+        }
+        .social_media{
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+        }
+        .social_media a{
+            color: black;
+            text-decoration: none;
+        }
+        .social_media a:hover{
+            color: #D24B25;
+            cursor: pointer;
+        }
+        .brand-accent {
+            height: 4px;
+            background: linear-gradient(90deg, #1F305C 0%, #D24B25 50%, #9BCB6C 100%);
+        }
+        @media (max-width: 480px) {
+            .content { padding: 32px 24px; }
+            .hero { height: 200px; }
+            .hero-title { font-size: 24px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <img src="{{ logo_url }}" alt="TALI Logo">
-        </div>
-        <div class="brand-line"></div>
+        <!-- Brand strip -->
+        <div class="brand-accent"></div>
+        
+        <!-- Hero Section -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="hero">
+                    <img src="https://static.wixstatic.com/media/782bc6_705607b5527544c0873d167feb751acb~mv2.png" alt="TALI" class="logo-small">
+                    <h1 class="hero-title">Impact Receipt</h1>
+                    <div class="hero-subtitle">Gala 2026: Building the Future</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Main Content -->
         <div class="content">
-            <h1 class="h1">Thank You for Your Impact!</h1>
-            <p>Dear {{ donor_name }},</p>
-            <p>On behalf of <strong>The Ability Life Initiative (TALI)</strong>, we want to express our deepest gratitude for your generous donation. Your support helps us continue our mission of empowering people living with disabilities.</p>
+            <div class="greeting">Thank You, {{ donor_name }}</div>
+            <p>Your generous contribution is more than just a donation—it's a seed of hope. Because of your support, <strong>The Ability Life Initiative (TALI)</strong> can continue to bridge the gap for persons living with disabilities.</p>
             
-            <div class="receipt-card">
-                <div class="receipt-row">
-                    <span class="label">Amount</span>
-                    <span class="value amount">₦{{ amount }}</span>
+            <div class="receipt-container">
+                <div class="receipt-header">Donation Summary</div>
+                <div class="receipt-row" style="margin-bottom: 24px; align-items: center;">
+                    <span class="receipt-label">Total Amount</span>
+                    <span class="receipt-value amount-highlight">₦{{ amount }}</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="label">Reference</span>
-                    <span class="value">{{ reference }}</span>
+                    <span class="receipt-label">Reference</span>
+                    <span class="receipt-value">{{ reference }}</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="label">Date</span>
-                    <span class="value">{{ date }}</span>
+                    <span class="receipt-label">Date</span>
+                    <span class="receipt-value">{{ date }}</span>
                 </div>
                 <div class="receipt-row">
-                    <span class="label">Payment Method</span>
-                    <span class="value">{{ payment_method }}</span>
+                    <span class="receipt-label">Payment Method</span>
+                    <span class="receipt-value">{{ payment_method }}</span>
                 </div>
             </div>
             
-            <p class="thank-you-msg">"Where art meets impact: Funding dreams, building futures."</p>
+            <div class="quote">"Where art meets impact: <br>Funding dreams, building futures."</div>
             
-            <p>If you have any questions regarding your donation, please feel free to reach out to us at <a href="mailto:info@theabilitylife.org" style="color: #D24B25; text-decoration: none;">info@theabilitylife.org</a>.</p>
-            
-            <p>Best regards,<br><strong>The TALI Team</strong></p>
+            <p style="font-size: 14px; text-align: center; color: #86868b;">If you have any questions, please contact us at <br><a href="mailto:info@theabilitylife.org" style="color: #D24B25; text-decoration: none; font-weight: 500;">info@theabilitylife.org</a></p>
         </div>
+
+        <!-- Footer -->
         <div class="footer">
-            <p>&copy; 2026 The Ability Life Initiative (TALI). All rights reserved.</p>
-            <p>Providing hope and building futures for people living with disabilities.</p>
+            <p>&copy; 2026 The Ability Life Initiative (TALI).<br><small>Providing hope and building futures for people living with disabilities.</small></p>
+            <div class="social_media">
+                <a href="https://instagram.com/tali_foundation">instagram</a>
+                <a href="https://linkedin.com/company/the-ability-life-initiative">linkedin</a>
+                <a href="https://www.facebook.com/people/The-Ability-Life-Initiative-TALI/100071549917049/">facebook</a>
+                <a href="https://theabilitylife.org/">website</a>
+            </div>
+
         </div>
     </div>
 </body>

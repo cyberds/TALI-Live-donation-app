@@ -3,99 +3,99 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TALI Admin Login Code</title>
+    <title>TALI Verification Code</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f7f9fc;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
             margin: 0;
             padding: 0;
-            -webkit-font-smoothing: antialiased;
+            color: #1d1d1f;
         }
         .container {
             max-width: 600px;
-            margin: 40px auto;
+            margin: 60px auto;
             background-color: #ffffff;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #eef2f7;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #d2d2d7;
         }
         .header {
-            background-color: #1F305C;
-            padding: 30px;
+            padding: 40px 0 20px;
             text-align: center;
+            background-color: #ffffff;
         }
         .header img {
-            max-width: 120px;
-            height: auto;
+            width: 64px;
+            height: 64px;
         }
         .content {
-            padding: 40px;
-            color: #333333;
-            line-height: 1.6;
-        }
-        .h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1F305C;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        .code-container {
-            background-color: #f8faff;
-            border: 1px dashed #1F305C;
-            border-radius: 8px;
-            padding: 20px;
+            padding: 20px 48px 48px;
             text-align: center;
-            margin: 30px 0;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: 12px;
+            color: #1F305C;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            color: #424245;
+        }
+        .code-box {
+            background-color: #fbfbfd;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            padding: 32px;
+            margin: 32px 0;
         }
         .code {
-            font-size: 32px;
+            font-size: 40px;
             font-weight: 700;
-            letter-spacing: 10px;
+            letter-spacing: 12px;
             color: #D24B25;
             margin: 0;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
         }
         .footer {
-            background-color: #f8fafc;
-            padding: 24px;
+            padding: 32px;
             text-align: center;
-            color: #64748b;
+            background-color: #f5f5f7;
             font-size: 13px;
-            border-top: 1px solid #eef2f7;
+            color: #86868b;
+            border-top: 1px solid #d2d2d7;
         }
-        .footer p {
-            margin: 4px 0;
-        }
-        .brand-line {
+        .brand-accent {
             height: 4px;
-            background: linear-gradient(to right, #1F305C, #D24B25, #9BCB6C);
+            background: linear-gradient(90deg, #1F305C 0%, #D24B25 50%, #9BCB6C 100%);
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="brand-accent"></div>
         <div class="header">
-            <img src="{{ logo_url }}" alt="TALI Logo">
+            <img src="https://static.wixstatic.com/media/782bc6_705607b5527544c0873d167feb751acb~mv2.png" alt="TALI">
         </div>
-        <div class="brand-line"></div>
         <div class="content">
-            <h1 class="h1">Admin Login Code</h1>
-            <p>Hello,</p>
-            <p>You requested a login code for the TALI Donation System. Please use the verification code below to access your dashboard:</p>
+            <h1>Verification Code</h1>
+            <p>Access the TALI Admin dashboard by entering the code below.</p>
             
-            <div class="code-container">
-                <p class="code">{{ code }}</p>
+            <div class="code-box">
+                <div class="code" id="verification-code">{{ code }}</div>
             </div>
             
-            <p>This code is valid for <strong>10 minutes</strong>. If you did not request this code, please ignore this email or contact the administrator if you have concerns about your account security.</p>
+            <p style="font-size: 14px; color: #86868b;">This code is valid for 10 minutes. If you did not request this code, you can safely ignore this email.</p>
             
-            <p>Best regards,<br><strong>TALI Tech Team</strong></p>
+            <p style="margin-top: 32px; font-weight: 500; font-size: 14px; color: #1F305C;">The Ability Life Initiative Team</p>
         </div>
         <div class="footer">
-            <p>&copy; 2026 The Ability Life Initiative (TALI). All rights reserved.</p>
-            <p>Providing hope and building futures for people living with disabilities.</p>
+            <p>&copy; 2026 The Ability Life Initiative (TALI).<br>Providing hope and building futures for people living with disabilities.</p>
         </div>
     </div>
 </body>

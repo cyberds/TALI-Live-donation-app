@@ -7,11 +7,17 @@ def send_tali_email(subject, template_name, context, recipient_list):
     """
     Sends a professional TALI branded email with both HTML and plain-text versions.
     """
-    # Ensure logo URL is available in context
+    # Ensure brand URLs are available in context
+    base_url = "https://tali-live-donation-4kj5z0sjn-doosu-beres-projects.vercel.app"
+    
     if 'logo_url' not in context:
-        # Use the Vercel URL if possible, fallback to a sensible default
-        base_url = "https://tali-live-donation-4kj5z0sjn-doosu-beres-projects.vercel.app"
         context['logo_url'] = f"{base_url}/favicon.png"
+    
+    if 'hero_url' not in context:
+        context['hero_url'] = f"{base_url}/gala-hero.jpg"
+    
+    if 'bg_url' not in context:
+        context['bg_url'] = f"{base_url}/TALI%20ART%20WHITE%20BG.png"
     
     # Render the HTML content
     html_content = render_to_string(template_name, context)
