@@ -50,6 +50,7 @@ export default function TransactionsPage() {
   const [manualIsAnonymous, setManualIsAnonymous] = useState(false);
   const [manualPaymentMode, setManualPaymentMode] = useState('MANUAL');
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -145,13 +146,20 @@ export default function TransactionsPage() {
     const token = localStorage.getItem('tali_admin_token');
     if (!token) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${id}/confirm-transfer/`, { 
         method: 'POST',
         headers: { 'Authorization': `Token ${token}` }
       });
-      if (res.ok) fetchTransactions();
+      if (res.ok) {
+        fetchTransactions();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setActionError(`Failed to confirm transfer: ${data.message || data.error || 'Unknown error'}`);
+      }
     } catch (err) {
+      setActionError('Network error. Please check your connection and try again.');
     } finally {
       setActionLoading(false);
     }
@@ -161,13 +169,20 @@ export default function TransactionsPage() {
     const token = localStorage.getItem('tali_admin_token');
     if (!token) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/donations/${id}/verify-ref/`, { 
         method: 'POST',
         headers: { 'Authorization': `Token ${token}` }
       });
-      if (res.ok) fetchTransactions();
+      if (res.ok) {
+        fetchTransactions();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setActionError(`Verification failed: ${data.status || data.error || 'Could not verify with Flutterwave'}`);
+      }
     } catch (err) {
+      setActionError('Network error. Please check your connection and try again.');
     } finally {
       setActionLoading(false);
     }
@@ -381,6 +396,13 @@ export default function TransactionsPage() {
               </tbody>
            </table>
        </div>
+
+       {actionError && (
+         <div style={{ margin: '8px 0', padding: '10px 16px', background: '#fff0f0', color: '#c0392b', borderRadius: 8, fontSize: 13, border: '1px solid #f5c6cb' }}>
+           {actionError}
+           <button onClick={() => setActionError(null)} style={{ marginLeft: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', fontWeight: 700 }}>✕</button>
+         </div>
+       )}
 
        <div className="pagination-bar">
            <div className="pagination-info">

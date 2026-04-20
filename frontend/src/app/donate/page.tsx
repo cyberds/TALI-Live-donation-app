@@ -30,6 +30,7 @@ export default function DonatePage() {
 
   // Dynamically loaded event data (bank info + ID)
   const [activeEvent, setActiveEvent] = useState<ActiveEvent | null>(null);
+  const [eventLoaded, setEventLoaded] = useState(false);
   const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
   const hasAmount = Number(amount) > 0;
   const hasIdentity = Boolean(name.trim() && email.trim());
@@ -47,7 +48,8 @@ export default function DonatePage() {
           });
         }
       })
-      .catch(() => { });
+      .catch(() => { })
+      .finally(() => setEventLoaded(true));
   }, []);
 
   const handleCopy = () => {
@@ -82,28 +84,25 @@ export default function DonatePage() {
     setLoading(true);
 
     try {
-      if (activeDonationId) {
-        // Update existing intent
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${activeDonationId}/`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            donor_name: name,
-            email,
-            phone,
-            is_anonymous: isAnonymous,
-            amount,
-            payment_mode: 'INTENT'
-          })
-        });
-      } else {
-        // Create new intent
-        const data = await createDonation('INTENT');
-        setActiveDonationId(data.id);
+      if (!activeEvent) {
+        setTransferError('No active event found. Please refresh the page and try again.');
+        return;
       }
+      if (activeDonationId) {
+        // Intent already exists from a previous visit to this step.
+        // The donor path only allows payment_mode upgrades, so we do NOT
+        // re-PATCH donor details here — they were saved at creation.
+        // Just advance to step 3.
+        setFormStep(3);
+        return;
+      }
+      // Create new intent with current donor details
+      const data = await createDonation('INTENT');
+      setActiveDonationId(data.id);
       setFormStep(3);
     } catch (err) {
-      console.error("Failed to save intent:", err);
+      console.error('Failed to save intent:', err);
+      setTransferError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -149,6 +148,8 @@ export default function DonatePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ payment_mode: 'FLUTTERWAVE' })
         });
+        // M2: guard against a failed PATCH — don't open checkout with a blank tx_ref
+        if (!res.ok) throw new Error('Failed to prepare payment. Please try again.');
         const data = await res.json();
         transactionReference = data.transaction_reference;
       } else {
@@ -156,6 +157,9 @@ export default function DonatePage() {
         currentDonationId = data.id;
         transactionReference = data.transaction_reference;
       }
+
+      // Guard: tx_ref must be present before opening checkout
+      if (!transactionReference) throw new Error('Missing transaction reference. Please try again.');
 
       // 2. Guard: Check if Flutterwave SDK loaded
       // @ts-ignore
@@ -296,6 +300,11 @@ export default function DonatePage() {
             </li>
           </ol>
 
+          {eventLoaded && !activeEvent && (
+            <div className="notice notice--warning">
+              No active fundraising event found. Some features may be unavailable. Please refresh or contact the organiser.
+            </div>
+          )}
           {paymentState === 'ABANDONED' && (
             <div className="notice notice--warning">
               Payment cancelled. You can continue whenever you are ready.
@@ -413,10 +422,11 @@ export default function DonatePage() {
                   <button type="button" className="btn-secondary wizard-btn" onClick={() => setFormStep(1)}>
                     Back
                   </button>
-                  <button type="button" className="btn-primary wizard-btn" disabled={!hasIdentity} onClick={goToReviewStep}>
-                    Next: Payment
+                  <button type="button" className="btn-primary wizard-btn" disabled={!hasIdentity || loading} onClick={goToReviewStep}>
+                    {loading ? 'Saving...' : 'Next: Payment'}
                   </button>
                 </div>
+                {transferError && <p className="transfer-feedback error" style={{ marginTop: 12 }}>{transferError}</p>}
               </>
             )}
 

@@ -7,15 +7,15 @@ import hashlib
 import threading
 import subprocess
 import sys
-from django.conf import settings
-import requests
-import random
-import csv
+import time
+import json
+from decimal import Decimal
 from datetime import timedelta
+from django.conf import settings
+from django.db import transaction as db_transaction
 from django.db.models import Sum, Max, Count, Q
 from django.shortcuts import get_object_or_404
 from django.http import StreamingHttpResponse, HttpResponse
-from django.core.mail import send_mail
 from django.utils import timezone
 from django.contrib.auth.models import User
 from rest_framework import status
@@ -24,6 +24,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework.pagination import LimitOffsetPagination
 
 from .models import Event, Donation, AdminEmail, LoginCode
 from .serializers import EventSummarySerializer, RecentDonationSerializer, DonationCreateSerializer, AdminDonationSerializer
@@ -146,7 +147,7 @@ class VerifyFlutterwavePaymentView(APIView):
              "Authorization": f"Bearer {secret_key}"
         }
         
-        if secret_key == 'dummy-key':
+        if not secret_key or secret_key == 'dummy-key':
             donation.payment_status = 'SUCCESS'
             donation.is_verified = True
             donation.save()
@@ -155,18 +156,31 @@ class VerifyFlutterwavePaymentView(APIView):
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
             data = resp.json().get('data', {})
-            from decimal import Decimal
             flw_amount = Decimal(str(data.get('amount', 0)))
-            if data.get('status') == 'successful' and flw_amount >= donation.amount:
-                donation.payment_status = 'SUCCESS'
-                donation.is_verified = True
-                donation.save()
-                send_donation_receipt(donation)
+            # C3: cross-check tx_ref to prevent a foreign transaction_id being
+            # used to verify an unrelated donation.
+            tx_ref_matches = data.get('tx_ref') == donation.transaction_reference
+            if data.get('status') == 'successful' and flw_amount >= donation.amount and tx_ref_matches:
+                with db_transaction.atomic():
+                    donation_locked = Donation.objects.select_for_update().get(id=donation_id)
+                    if donation_locked.payment_status == 'SUCCESS':
+                        return Response({'message': 'Already verified'}, status=status.HTTP_200_OK)
+                    donation_locked.payment_status = 'SUCCESS'
+                    donation_locked.is_verified = True
+                    donation_locked.save()
+                send_donation_receipt(donation_locked)
                 return Response({'status': 'verified'}, status=status.HTTP_200_OK)
-        
-        donation.payment_status = 'FAILED'
-        donation.save()
-        return Response({'status': 'failed verification'}, status=status.HTTP_400_BAD_REQUEST)
+            # Flutterwave responded 200 but the payment is explicitly not successful
+            donation.payment_status = 'FAILED'
+            donation.save()
+            return Response({'status': 'failed verification'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # M4: Flutterwave API error (5xx, timeout, network issue) — leave as PENDING
+        # so it can be retried. Do NOT permanently mark as FAILED.
+        return Response(
+            {'status': 'Flutterwave API unavailable, please retry'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
 
 class RequestLoginCodeView(APIView):
     def post(self, request):
@@ -223,6 +237,9 @@ def get_filtered_transactions(request):
         event = get_object_or_404(Event, is_active=True)
 
     donations = event.donations.all().order_by('-created_at')
+    # Exclude bare INTENT records — they are uncommitted donor sessions, not real transactions.
+    # Admins see only actionable records: FLUTTERWAVE, BANK_TRANSFER, MANUAL.
+    donations = donations.exclude(payment_mode='INTENT')
     
     search = request.query_params.get('search', '')
     if search:
@@ -354,14 +371,50 @@ class ManualDonationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DonationUpdateView(APIView):
+    """
+    PATCH /api/donations/<id>/
+
+    Two permission levels:
+    - Authenticated admin (Token header present & valid): full patch allowed.
+    - Unauthenticated donor: may ONLY upgrade a PENDING INTENT record's
+      payment_mode to FLUTTERWAVE or BANK_TRANSFER. No other field changes
+      are permitted, and no other record states are patchable.
+    """
+
+    DONOR_ALLOWED_UPGRADE_MODES = {'FLUTTERWAVE', 'BANK_TRANSFER'}
+
     def patch(self, request, donation_id):
         donation = get_object_or_404(Donation, id=donation_id)
-        serializer = DonationCreateSerializer(donation, data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_donation = serializer.save()
-            # Return the full serializer so frontend gets transaction_reference
-            return Response(AdminDonationSerializer(updated_donation).data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        is_admin = request.user and request.user.is_authenticated
+
+        if is_admin:
+            # Full patch for authenticated staff
+            serializer = DonationCreateSerializer(donation, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_donation = serializer.save()
+                return Response(AdminDonationSerializer(updated_donation).data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # --- Unauthenticated donor path ---
+        # Guard 1: only INTENT records in PENDING state can be upgraded by a donor
+        if donation.payment_mode != 'INTENT' or donation.payment_status != 'PENDING':
+            return Response(
+                {'error': 'This donation cannot be modified.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Guard 2: only payment_mode upgrade is permitted; reject any other fields
+        requested_mode = request.data.get('payment_mode')
+        if set(request.data.keys()) - {'payment_mode'} or requested_mode not in self.DONOR_ALLOWED_UPGRADE_MODES:
+            return Response(
+                {'error': 'Only payment_mode upgrade is permitted.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Safe to upgrade
+        donation.payment_mode = requested_mode
+        donation.save()
+        return Response(AdminDonationSerializer(donation).data, status=status.HTTP_200_OK)
 
 
 class VerifyFlutterwaveByRefView(APIView):
@@ -373,7 +426,7 @@ class VerifyFlutterwaveByRefView(APIView):
             return Response({'message': 'Already verified'}, status=status.HTTP_200_OK)
             
         secret_key = os.environ.get('FLUTTERWAVE_SECRET_KEY', 'dummy-key')
-        if secret_key == 'dummy-key':
+        if not secret_key or secret_key == 'dummy-key':
             donation.payment_status = 'SUCCESS'
             donation.is_verified = True
             donation.save()
@@ -391,8 +444,16 @@ class VerifyFlutterwaveByRefView(APIView):
                 donation.save()
                 send_donation_receipt(donation)
                 return Response({'status': 'verified'}, status=status.HTTP_200_OK)
-                
-        return Response({'status': 'Not successful on Flutterwave'}, status=status.HTTP_400_BAD_REQUEST)
+            # Explicitly not successful — mark FAILED
+            donation.payment_status = 'FAILED'
+            donation.save()
+            return Response({'status': 'Not successful on Flutterwave'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # M4: Flutterwave API error — leave as PENDING so admin can retry
+        return Response(
+            {'status': 'Flutterwave API unavailable, please retry'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
 
 class AdminTransactionsExportView(APIView):
     permission_classes = [IsAuthenticated]
@@ -434,25 +495,38 @@ class AdminEventListView(APIView):
 def flutterwave_webhook(request):
     secret_hash = os.environ.get('FLUTTERWAVE_WEBHOOK_HASH', '')
     signature = request.headers.get('verif-hash', '')
-    
-    if secret_hash and signature != secret_hash:
+
+    # Fail-closed: if the hash is not configured, reject all webhook requests.
+    # This prevents the webhook from accepting arbitrary POSTs when the env var
+    # is missing or malformed (e.g. missing = sign in .env file).
+    if not secret_hash:
+        return Response({'error': 'Webhook hash not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    if signature != secret_hash:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
-        
+
     payload = request.data
-    
+
     if payload.get('event') == 'charge.completed' and payload.get('data', {}).get('status') == 'successful':
         tx_ref = payload['data']['tx_ref']
+        # M3: validate the amount Flutterwave reports matches what we expect
         try:
-            donation = Donation.objects.get(transaction_reference=tx_ref)
-            if donation.payment_status != 'SUCCESS':
+            with db_transaction.atomic():
+                donation = Donation.objects.select_for_update().get(transaction_reference=tx_ref)
+                if donation.payment_status == 'SUCCESS':
+                    return Response({'status': 'Already processed'}, status=status.HTTP_200_OK)
+                flw_amount = Decimal(str(payload['data'].get('amount', 0)))
+                if flw_amount < donation.amount:
+                    return Response({'error': 'Amount mismatch'}, status=status.HTTP_400_BAD_REQUEST)
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
-                send_donation_receipt(donation)
-                return Response({'status': 'Payment verified'}, status=status.HTTP_200_OK)
+            # Send receipt outside the transaction lock
+            send_donation_receipt(donation)
+            return Response({'status': 'Payment verified'}, status=status.HTTP_200_OK)
         except Donation.DoesNotExist:
             return Response({'error': 'Donation not found'}, status=status.HTTP_404_NOT_FOUND)
-            
+
     return Response(status=status.HTTP_200_OK)
 
 import time
