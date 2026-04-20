@@ -28,9 +28,11 @@ class RecentDonationSerializer(serializers.ModelSerializer):
         return obj.donor_name or "Unknown"
 
 class DonationCreateSerializer(serializers.ModelSerializer):
+    transaction_reference = serializers.CharField(read_only=True)
+
     class Meta:
         model = Donation
-        fields = ['event', 'donor_name', 'email', 'phone', 'is_anonymous', 'amount', 'payment_mode']
+        fields = ['event', 'donor_name', 'email', 'phone', 'is_anonymous', 'amount', 'payment_mode', 'transaction_reference']
         
     def validate_amount(self, value):
         if value <= 0:

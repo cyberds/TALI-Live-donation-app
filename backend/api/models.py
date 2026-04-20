@@ -51,26 +51,23 @@ class Donation(models.Model):
         return f"{name} - {self.amount} ({self.get_payment_status_display()})"
     
     def save(self, *args, **kwargs):
-        if not self.transaction_reference or self.payment_mode != 'INTENT':
-            prefix = 'TALI'
-            if self.payment_mode == 'BANK_TRANSFER':
-                prefix = 'TALI-BT'
-            elif self.payment_mode == 'FLUTTERWAVE':
-                prefix = 'TALI-FLW'
-            elif self.payment_mode == 'MANUAL':
-                prefix = 'TALI-MAN'
-            
-            # If no ref, or if it's a generic intent ref being upgraded
-            if not self.transaction_reference:
-                self.transaction_reference = f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
-            elif self.transaction_reference.startswith('TALI-') and '-' not in self.transaction_reference[5:]: 
-                # This catches 'TALI-XXXX' but not 'TALI-BT-XXXX'
-                if (self.payment_mode == 'BANK_TRANSFER' and not self.transaction_reference.startswith('TALI-BT-')) or \
-                   (self.payment_mode == 'FLUTTERWAVE' and not self.transaction_reference.startswith('TALI-FLW-')) or \
-                   (self.payment_mode == 'MANUAL' and not self.transaction_reference.startswith('TALI-MAN-')):
-                    suffix = self.transaction_reference.split('-', 1)[1]
-                    self.transaction_reference = f"{prefix}-{suffix}"
-                    
+        # Determine the appropriate prefix for the payment mode
+        prefix_map = {
+            'FLUTTERWAVE': 'TALI-FLW',
+            'BANK_TRANSFER': 'TALI-BT',
+            'MANUAL': 'TALI-MAN',
+            'INTENT': 'TALI-INT',
+        }
+        prefix = prefix_map.get(self.payment_mode, 'TALI')
+
+        if not self.transaction_reference:
+            # Brand new record — generate a fresh reference
+            self.transaction_reference = f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
+        elif self.transaction_reference.startswith('TALI-INT-') and self.payment_mode != 'INTENT':
+            # Upgrading from INTENT to a real payment mode — regenerate with correct prefix
+            self.transaction_reference = f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
+        # Otherwise: keep the existing reference unchanged (idempotent)
+
         super().save(*args, **kwargs)
 
 class AdminEmail(models.Model):

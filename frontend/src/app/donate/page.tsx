@@ -278,7 +278,7 @@ export default function DonatePage() {
           <div className="donate-form__header">
             {/* <p className="donate-hero__eyebrow">The Ability Life Initiative</p> */}
             <h2>Donate Securely</h2>
-            <p>Your support funds seed grants and opportunities for entrepreneurs living with disabilities across Nigeria.</p>
+            <p>Your support funds seed grants and opportunities for entrepreneurs with disabilities across Nigeria.</p>
           </div>
 
           <ol className="donate-steps-indicator" aria-label="Donation steps">

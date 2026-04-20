@@ -155,7 +155,9 @@ class VerifyFlutterwavePaymentView(APIView):
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
             data = resp.json().get('data', {})
-            if data.get('status') == 'successful' and data.get('amount') >= donation.amount:
+            from decimal import Decimal
+            flw_amount = Decimal(str(data.get('amount', 0)))
+            if data.get('status') == 'successful' and flw_amount >= donation.amount:
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
@@ -357,6 +359,7 @@ class DonationUpdateView(APIView):
         serializer = DonationCreateSerializer(donation, data=request.data, partial=True)
         if serializer.is_valid():
             updated_donation = serializer.save()
+            # Return the full serializer so frontend gets transaction_reference
             return Response(AdminDonationSerializer(updated_donation).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -380,7 +383,9 @@ class VerifyFlutterwaveByRefView(APIView):
         resp = requests.get(url, headers={"Authorization": f"Bearer {secret_key}"})
         if resp.status_code == 200:
             data = resp.json().get('data', {})
-            if data.get('status') == 'successful' and data.get('amount') >= donation.amount:
+            from decimal import Decimal
+            flw_amount = Decimal(str(data.get('amount', 0)))
+            if data.get('status') == 'successful' and flw_amount >= donation.amount:
                 donation.payment_status = 'SUCCESS'
                 donation.is_verified = True
                 donation.save()
