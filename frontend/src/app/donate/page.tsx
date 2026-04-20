@@ -152,6 +152,14 @@ export default function DonatePage() {
         // M2: guard against a failed PATCH — don't open checkout with a blank tx_ref
         if (!res.ok) throw new Error('Failed to prepare payment. Please try again.');
         const data = await res.json();
+        
+        // If it's already successful (e.g. admin confirmed it), just show success screen
+        if (data.payment_status === 'SUCCESS') {
+          setPaymentState('SUCCESS');
+          setLoading(false);
+          return;
+        }
+        
         transactionReference = data.transaction_reference;
       } else {
         const data = await createDonation('FLUTTERWAVE');
@@ -233,7 +241,16 @@ export default function DonatePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ payment_mode: 'BANK_TRANSFER' })
         });
+        if (!res.ok) throw new Error('Failed to submit notice.');
         const data = await res.json();
+        
+        // If it's already successful (e.g. admin confirmed it), just show success screen
+        if (data.payment_status === 'SUCCESS') {
+          setPaymentState('SUCCESS');
+          setTransferLoading(false);
+          return;
+        }
+        
         transactionReference = data.transaction_reference;
       } else {
         const data = await createDonation('BANK_TRANSFER');

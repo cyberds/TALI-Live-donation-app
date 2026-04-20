@@ -405,10 +405,15 @@ class DonationUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # --- Unauthenticated donor path ---
-        # Guard 1: only PENDING records can be modified by a donor
+        # If the donation is already successful (e.g. admin confirmed it), 
+        # return the data as 200 OK so the donor sees their receipt instead of an error.
+        if donation.payment_status == 'SUCCESS':
+            return Response(AdminDonationSerializer(donation).data, status=status.HTTP_200_OK)
+
+        # For any other non-PENDING status (like FAILED), prevent modification.
         if donation.payment_status != 'PENDING':
             return Response(
-                {'error': 'This donation is already processed and cannot be modified. Change the amount if this is a new donation'},
+                {'error': 'This donation cannot be modified. Please change the amount to start a new donation.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
