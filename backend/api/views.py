@@ -376,7 +376,7 @@ class DonationUpdateView(APIView):
 
     Two permission levels:
     - Authenticated admin (Token header present & valid): full patch allowed.
-    - Unauthenticated donor: may ONLY upgrade a PENDING INTENT record's
+    - Unauthenticated donor: may ONLY upgrade a PENDING record's
       payment_mode to FLUTTERWAVE or BANK_TRANSFER. No other field changes
       are permitted, and no other record states are patchable.
     """
@@ -396,22 +396,24 @@ class DonationUpdateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # --- Unauthenticated donor path ---
-        # Guard 1: only INTENT records in PENDING state can be upgraded by a donor
-        if donation.payment_mode != 'INTENT' or donation.payment_status != 'PENDING':
+        # Guard 1: only PENDING records can be modified by a donor
+        if donation.payment_status != 'PENDING':
             return Response(
-                {'error': 'This donation cannot be modified.'},
+                {'error': 'This donation is already processed and cannot be modified. Change the amount if this is a new donation'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Guard 2: only payment_mode upgrade is permitted; reject any other fields
+        # Guard 2: only payment_mode update is permitted; reject any other fields
         requested_mode = request.data.get('payment_mode')
-        if set(request.data.keys()) - {'payment_mode'} or requested_mode not in self.DONOR_ALLOWED_UPGRADE_MODES:
+        allowed_modes = self.DONOR_ALLOWED_UPGRADE_MODES | {'INTENT'}
+        
+        if set(request.data.keys()) - {'payment_mode'} or requested_mode not in allowed_modes:
             return Response(
-                {'error': 'Only payment_mode upgrade is permitted.'},
+                {'error': 'Only payment mode changes are permitted.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Safe to upgrade
+        # Safe to update
         donation.payment_mode = requested_mode
         donation.save()
         return Response(AdminDonationSerializer(donation).data, status=status.HTTP_200_OK)
@@ -682,4 +684,3 @@ class GithubWebhookDeployView(APIView):
         threading.Thread(target=execute_alwaysdata_deploy).start()
         
         return Response({'status': 'Deployment started'}, status=status.HTTP_200_OK)
-

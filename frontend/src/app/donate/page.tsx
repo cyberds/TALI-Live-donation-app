@@ -71,6 +71,7 @@ export default function DonatePage() {
   const handleAmountSelect = (val: number) => {
     setAmount(val);
     setIsCustom(false);
+    setActiveDonationId(null);
   };
 
   const goToDetailsStep = () => {
@@ -209,6 +210,9 @@ export default function DonatePage() {
           setPaymentState(prev => prev === 'SUCCESS' ? 'SUCCESS' : 'ABANDONED');
         }
       });
+      
+      // Clear the "active" intent immediately so any subsequent action is a fresh one
+      setActiveDonationId(null);
     } catch (err) {
       console.error(err);
       setPaymentState('FAILED');
@@ -236,6 +240,7 @@ export default function DonatePage() {
         transactionReference = data.transaction_reference;
       }
       setTransferRef(transactionReference || null);
+      setActiveDonationId(null);
     } catch (err) {
       setTransferError('Could not submit your transfer notice right now. Please try again.');
     } finally {
@@ -256,7 +261,15 @@ export default function DonatePage() {
               Your generous donation has been securely received and recorded.
               Together we are bridging the gap for persons living with disabilities.
             </p>
-            <button className="btn-primary" onClick={() => { setPaymentState(null); setAmount(''); }} style={{ width: 'auto', padding: '0.8rem 2rem' }}>
+            <button className="btn-primary" onClick={() => { 
+              setPaymentState(null); 
+              setAmount(''); 
+              setName('');
+              setEmail('');
+              setPhone('');
+              setActiveDonationId(null);
+              setFormStep(1);
+            }} style={{ width: 'auto', padding: '0.8rem 2rem' }}>
               Make another donation
             </button>
           </section>
@@ -347,6 +360,7 @@ export default function DonatePage() {
                     onChange={(e) => {
                       setIsCustom(true);
                       setAmount(e.target.value ? Number(e.target.value) : '');
+                      setActiveDonationId(null);
                     }}
                     onClick={() => setIsCustom(true)}
                     min={100}
@@ -376,6 +390,7 @@ export default function DonatePage() {
                       onChange={(e) => {
                         setName(e.target.value);
                         if (!e.target.value.trim()) setIsAnonymous(false);
+                        setActiveDonationId(null);
                       }}
                     />
                   </div>
@@ -389,7 +404,10 @@ export default function DonatePage() {
                       placeholder="john@example.com"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setActiveDonationId(null);
+                      }}
                     />
                   </div>
 
@@ -401,7 +419,10 @@ export default function DonatePage() {
                       className="form-input"
                       placeholder="+234 XXX XXXX"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setActiveDonationId(null);
+                      }}
                     />
                   </div>
 
@@ -412,7 +433,10 @@ export default function DonatePage() {
                         type="checkbox"
                         checked={isAnonymous}
                         disabled={!name.trim()}
-                        onChange={(e) => setIsAnonymous(e.target.checked)}
+                        onChange={(e) => {
+                          setIsAnonymous(e.target.checked);
+                          setActiveDonationId(null);
+                        }}
                       />
                       <span>Keep my donation anonymous publicly</span>
                     </label>
