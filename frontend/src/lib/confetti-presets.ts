@@ -1,4 +1,4 @@
-import confetti from "canvas-confetti";
+import confetti, { CreateTypes as ConfettiInstance, Options as ConfettiOptions } from "canvas-confetti";
 
 export const fireConfettiGun = () => {
   const end = Date.now() + 3 * 1000; // 3 seconds gun
@@ -32,7 +32,6 @@ export const fireConfettiGun = () => {
 
 export const fireSideCannons = () => {
   const end = Date.now() + 5 * 1000;
-  const duration = 5 * 1000;
 
   (function frame() {
     confetti({
@@ -68,8 +67,8 @@ export const fireOversizedSprinkles = () => {
   });
 };
 
-export const fireEliteCelebration = (instance?: any) => {
-    const fire = instance || confetti;
+export const fireEliteCelebration = (instance?: (options?: ConfettiOptions) => void) => {
+    const fire = instance || (confetti as any);
     const end = Date.now() + 5 * 1000;
     const colors = ["#1F305C", "#D24B25", "#9BCB6C", "#d4af37", "#722f37"];
     
@@ -84,7 +83,7 @@ export const fireEliteCelebration = (instance?: any) => {
     });
 
     // 2. Side Cannons "Shooter" effect
-    const interval: any = setInterval(function() {
+    const interval = setInterval(function() {
       const timeLeft = end - Date.now();
       if (timeLeft <= 0) return clearInterval(interval);
 

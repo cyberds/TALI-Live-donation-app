@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Confetti from '@/components/magicui/confetti';
 import { fireEliteCelebration } from '@/lib/confetti-presets';
+import { Options as ConfettiOptions } from "canvas-confetti";
 import './live.css';
 
 interface BaseStats {
@@ -43,7 +44,7 @@ export default function LiveDisplay() {
   const [recentDonors, setRecentDonors] = useState<LiveDonation[]>([]);
   const lastCelebrationCount = useRef<number | null>(null);
   const lastMilestone = useRef<string | null>(null);
-  const confettiRef = useRef<any>(null);
+  const confettiRef = useRef<{ fire: (options?: ConfettiOptions) => void } | null>(null);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/events/active/summary/`)
@@ -115,7 +116,7 @@ export default function LiveDisplay() {
           if (data.new_donations && data.new_donations.length > 0) {
             setRecentDonors(prev => {
               const currentIds = new Set(prev.map(d => d.id));
-              const newOnes = data.new_donations.filter((d: any) => !currentIds.has(d.id));
+              const newOnes = data.new_donations.filter((d: LiveDonation) => !currentIds.has(d.id));
               return [...newOnes, ...prev].slice(0, 20);
             });
           }

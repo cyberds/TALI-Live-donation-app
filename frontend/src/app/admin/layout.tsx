@@ -7,6 +7,12 @@ import { AdminContext } from './AdminContext';
 import './../globals.css';
 import './admin.css';
 
+interface EventData {
+  id: number;
+  title: string;
+  is_active: boolean;
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [adminName, setAdminName] = useState<string>('TALI Staff');
@@ -18,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   
   // Context state
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<EventData[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -54,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .then(data => {
             if (data && Array.isArray(data)) {
                 setEvents(data);
-                const active = data.find((e: any) => e.is_active) || data[0];
+                const active = data.find((e: EventData) => e.is_active) || data[0];
                 if (active) setSelectedEventId(active.id);
             }
         }).catch(err => console.error(err));

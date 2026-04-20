@@ -9,7 +9,6 @@ import confetti from "canvas-confetti";
 import React, {
   createContext,
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -35,7 +34,6 @@ const Confetti = forwardRef<Api, Props>((props, ref) => {
     options: globalOptions,
     onReady,
     manualstart = false,
-    className,
     ...rest
   } = props;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,6 +101,8 @@ const Confetti = forwardRef<Api, Props>((props, ref) => {
     </ConfettiContext.Provider>
   );
 });
+
+Confetti.displayName = "Confetti";
 
 export interface ConfettiButtonProps extends Props {
   children?: React.ReactNode;

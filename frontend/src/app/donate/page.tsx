@@ -162,7 +162,7 @@ export default function DonatePage() {
       if (!transactionReference) throw new Error('Missing transaction reference. Please try again.');
 
       // 2. Guard: Check if Flutterwave SDK loaded
-      // @ts-ignore
+      // @ts-expect-error - FlutterwaveCheckout is injected via script
       if (typeof FlutterwaveCheckout === 'undefined') {
         setPaymentState('FAILED');
         setLoading(false);
@@ -170,7 +170,7 @@ export default function DonatePage() {
       }
 
       // 3. Open FlutterwaveCheckout modal
-      // @ts-ignore
+      // @ts-expect-error - FlutterwaveCheckout is injected via script
       FlutterwaveCheckout({
         public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY || "FLWPUBK_TEST-dummy-key",
         tx_ref: transactionReference,
@@ -187,7 +187,7 @@ export default function DonatePage() {
           description: "Creative Inclusion & Enterprise Auction — support for TALI.",
           logo: "https://www.theabilitylife.org/favicon.ico",
         },
-        callback: async function (payment: any) {
+        callback: async function (payment: { transaction_id: string }) {
           try {
             const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/donations/${currentDonationId}/verify/`, {
               method: 'POST',
