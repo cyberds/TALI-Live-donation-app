@@ -371,7 +371,7 @@ export default function TransactionsPage() {
                              <span className={`status-badge status-${tx.payment_status.toLowerCase()}`}>
                                 {tx.payment_status === 'SUCCESS' ? 'Confirmed' : 'Pending'}
                              </span>
-                              {tx.payment_mode === 'BANK_TRANSFER' && tx.payment_status !== 'SUCCESS' && (
+                              {(tx.payment_mode === 'BANK_TRANSFER' || tx.payment_mode === 'INTENT') && tx.payment_status !== 'SUCCESS' && (
                                  <button className="confirm-btn-mini" onClick={() => handleConfirmTransfer(tx.id)} disabled={actionLoading}>
                                      {actionLoading ? '...' : 'Confirm'}
                                  </button>

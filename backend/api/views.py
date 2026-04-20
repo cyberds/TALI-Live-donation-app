@@ -117,10 +117,19 @@ class ConfirmBankTransferView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, donation_id):
-        donation = get_object_or_404(Donation, id=donation_id, payment_mode='BANK_TRANSFER')
+        donation = get_object_or_404(Donation, id=donation_id)
+        
+        # Admins can confirm BANK_TRANSFER or INTENT records
+        if donation.payment_mode not in ['BANK_TRANSFER', 'INTENT']:
+            return Response({'error': 'Only bank transfers or intents can be manually confirmed.'}, status=status.HTTP_400_BAD_REQUEST)
+            
         if donation.payment_status == 'SUCCESS':
             return Response({'message': 'Donation already confirmed'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # If it was just an intent, upgrade it to BANK_TRANSFER now that we have the money
+        if donation.payment_mode == 'INTENT':
+            donation.payment_mode = 'BANK_TRANSFER'
+            
         donation.payment_status = 'SUCCESS'
         donation.is_verified = True
         donation.save()
@@ -128,7 +137,7 @@ class ConfirmBankTransferView(APIView):
         # Send donation receipt
         send_donation_receipt(donation)
         
-        return Response({'message': 'Bank transfer confirmed successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Donation confirmed successfully'}, status=status.HTTP_200_OK)
 
 class VerifyFlutterwavePaymentView(APIView):
     def post(self, request, donation_id):
@@ -237,9 +246,9 @@ def get_filtered_transactions(request):
         event = get_object_or_404(Event, is_active=True)
 
     donations = event.donations.all().order_by('-created_at')
-    # Exclude bare INTENT records — they are uncommitted donor sessions, not real transactions.
-    # Admins see only actionable records: FLUTTERWAVE, BANK_TRANSFER, MANUAL.
-    donations = donations.exclude(payment_mode='INTENT')
+    # Now including INTENT records so admins can see donors who started but didn't finish the UI flow
+    # (e.g. they transferred money but didn't click the final button).
+    # donations = donations.exclude(payment_mode='INTENT')
     
     search = request.query_params.get('search', '')
     if search:
