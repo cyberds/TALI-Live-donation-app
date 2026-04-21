@@ -1,6 +1,7 @@
 import os
 import requests
 import random
+import uuid
 import csv
 import hmac
 import hashlib
@@ -156,7 +157,8 @@ class VerifyFlutterwavePaymentView(APIView):
              "Authorization": f"Bearer {secret_key}"
         }
         
-        if not secret_key or secret_key == 'dummy-key':
+        # MOCK BYPASS: Only allowed if settings.DEBUG is True and secret_key is missing/dummy
+        if settings.DEBUG and (not secret_key or secret_key == 'dummy-key'):
             donation.payment_status = 'SUCCESS'
             donation.is_verified = True
             donation.save()
@@ -197,7 +199,8 @@ class RequestLoginCodeView(APIView):
         if not email or not AdminEmail.objects.filter(email=email, is_active=True).exists():
             # return Response({'message': 'If this email is registered, a code has been sent.'}, status=status.HTTP_200_OK)
             return Response({'message': 'If this email is registered, a code has been sent.'}, status=status.HTTP_400_BAD_REQUEST)
-        code = str(random.randint(100000, 999999))
+        # Generate 6-character alphanumeric code for better security
+        code = uuid.uuid4().hex[:6].upper()
         LoginCode.objects.create(email=email, code=code)
         
         try:
@@ -442,7 +445,7 @@ class VerifyFlutterwaveByRefView(APIView):
             return Response({'message': 'Already verified'}, status=status.HTTP_200_OK)
             
         secret_key = os.environ.get('FLUTTERWAVE_SECRET_KEY', 'dummy-key')
-        if not secret_key or secret_key == 'dummy-key':
+        if settings.DEBUG and (not secret_key or secret_key == 'dummy-key'):
             donation.payment_status = 'SUCCESS'
             donation.is_verified = True
             donation.save()
@@ -524,7 +527,9 @@ def flutterwave_webhook(request):
     payload = request.data
 
     if payload.get('event') == 'charge.completed' and payload.get('data', {}).get('status') == 'successful':
-        tx_ref = payload['data']['tx_ref']
+        tx_ref = payload.get('data', {}).get('tx_ref')
+        if not tx_ref:
+            return Response({'error': 'Missing tx_ref'}, status=status.HTTP_400_BAD_REQUEST)
         # M3: validate the amount Flutterwave reports matches what we expect
         try:
             with db_transaction.atomic():

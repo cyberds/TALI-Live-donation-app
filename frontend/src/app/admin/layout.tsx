@@ -139,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="auth-card">
             <h2 style={{ textAlign: 'center', marginBottom: '8px', fontSize: '24px', fontWeight: 600 }}>TALI Admin</h2>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '30px', fontSize: '14px' }}>
-              {authStep === 1 ? 'Enter your registered email to continue.' : `Enter the 6-digit code sent to ${authEmail}.`}
+              {authStep === 1 ? 'Enter your registered email to continue.' : `Enter the 6-character code sent to ${authEmail}.`}
             </p>
 
             {authError && (
@@ -164,10 +164,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ) : (
               <form onSubmit={handleVerifyCode}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="admin-code">6-Digit Code</label>
+                  <label className="form-label" htmlFor="admin-code">6-Character Code</label>
                   <input 
-                    id="admin-code" type="text" maxLength={6} className="form-input" placeholder="123456" 
-                    required value={authCode} onChange={e => setAuthCode(e.target.value.replace(/\D/g, ''))} 
+                    id="admin-code" type="text" maxLength={6} className="form-input" placeholder="A1B2C3" 
+                    required value={authCode} onChange={e => setAuthCode(e.target.value.toUpperCase())} 
                     style={{ letterSpacing: '4px', textAlign: 'center', fontSize: '20px', fontWeight: 600 }}
                   />
                 </div>
